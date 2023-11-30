@@ -84,6 +84,46 @@ for (index in 1:length(adjust_val)) {
               pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
             }
             
+            # Making the border line a spatstat object
+            border_line_1_2 = longStrBroke[[k]][[i]][[j]]$shorterStreet
+            
+            b_c_1_2 = border_line_1_2@lines[[1]]@Lines[[1]]@coords
+            b_line_pp = ppp(b_c_1_2[,"x"], b_c_1_2[,"y"],
+                            c(min(b_c_1_2[,"x"]), max(b_c_1_2[,"x"])), 
+                            c(min(b_c_1_2[,"y"]), max(b_c_1_2[,"y"])))
+            b_line_1_2 = psp(b_c_1_2[1:(nrow(b_c_1_2)-1),"x"], 
+                             b_c_1_2[1:(nrow(b_c_1_2)-1),"y"],
+                             b_c_1_2[2:nrow(b_c_1_2),"x"],
+                             b_c_1_2[2:nrow(b_c_1_2),"y"],
+                             Window(b_line_pp))
+            
+            # Defining window
+            box_x_min = min(c(poly1@Polygons[[1]]@coords[,"x"], 
+                              poly2@Polygons[[1]]@coords[,"x"]))
+            box_x_max = max(c(poly1@Polygons[[1]]@coords[,"x"], 
+                              poly2@Polygons[[1]]@coords[,"x"]))
+            box_y_min = min(c(poly1@Polygons[[1]]@coords[,"y"], 
+                              poly2@Polygons[[1]]@coords[,"y"]))
+            box_y_max = max(c(poly1@Polygons[[1]]@coords[,"y"], 
+                              poly2@Polygons[[1]]@coords[,"y"]))
+            if(length(poly1@Polygons) > 1) {
+                for (pj in 1:length(poly1@Polygons)) {
+                    box_x_min = min(c(box_x_min, poly1@Polygons[[pj]]@coords[,"x"]))
+                    box_x_max = max(c(box_x_max, poly1@Polygons[[pj]]@coords[,"x"]))
+                    box_y_min = min(c(box_y_min, poly1@Polygons[[pj]]@coords[,"y"]))
+                    box_y_max = max(c(box_y_max, poly1@Polygons[[pj]]@coords[,"y"]))
+                }
+            }
+            
+            if(length(poly2@Polygons) > 1) {
+                for (pj in 1:length(poly2@Polygons)) {
+                    box_x_min = min(c(box_x_min, poly2@Polygons[[pj]]@coords[,"x"]))
+                    box_x_max = max(c(box_x_max, poly2@Polygons[[pj]]@coords[,"x"]))
+                    box_y_min = min(c(box_y_min, poly2@Polygons[[pj]]@coords[,"y"]))
+                    box_y_max = max(c(box_y_max, poly2@Polygons[[pj]]@coords[,"y"]))
+                }
+            }
+            
             # Calculating the spatial component
             prec_1_x = arr_sub$x_coord_cd[arr_1 > 0]
             prec_1_y = arr_sub$y_coord_cd[arr_1 > 0]
@@ -91,34 +131,21 @@ for (index in 1:length(adjust_val)) {
             prec_2_x = arr_sub$x_coord_cd[arr_2 > 0]
             prec_2_y = arr_sub$y_coord_cd[arr_2 > 0]
             
-            pp_1 = ppp(prec_1_x, prec_1_y, 
-                        c(min(c(prec_1_x, prec_2_x)), max(c(prec_1_x, prec_2_x))), 
-                        c(min(c(prec_1_y, prec_2_y)), max(c(prec_1_y, prec_2_y))))
-            pp_2 = ppp(prec_2_x, prec_2_y, 
-                        c(min(c(prec_1_x, prec_2_x)), max(c(prec_1_x, prec_2_x))), 
-                        c(min(c(prec_1_y, prec_2_y)), max(c(prec_1_y, prec_2_y))))
-            
-            border_line_1_2 = longStrBroke[[k]][[i]][[j]]$shorterStreet
-            
-            b_c_1_2 = border_line_1_2@lines[[1]]@Lines[[1]]@coords
-            b_line_1_2 = psp(b_c_1_2[1:(nrow(b_c_1_2)-1),"x"], 
-                             b_c_1_2[1:(nrow(b_c_1_2)-1),"y"],
-                             b_c_1_2[2:nrow(b_c_1_2),"x"],
-                             b_c_1_2[2:nrow(b_c_1_2),"y"],
-                             Window(pp_1))
-            
-            int_1 = density.ppp(pp_1, adjust = adjust_val[index], scalekernel = T) 
-            int_2 = density.ppp(pp_2, adjust = adjust_val[index], scalekernel = T)
-            
+            pp_1 = ppp(prec_1_x, prec_1_y, c(box_x_min, box_x_max), c(box_y_min, box_y_max))
+            int_1 = density.ppp(pp_1, adjust = adjust_val[index], scalekernel = T)
             line_intensity_1 = int_1[b_line_1_2]
-            line_intensity_2 = int_2[b_line_1_2]
             int_line_1 = mean(line_intensity_1)
+            
+            pp_2 = ppp(prec_2_x, prec_2_y, c(box_x_min, box_x_max), c(box_y_min, box_y_max))
+            int_2 = density.ppp(pp_2, adjust = adjust_val[index], scalekernel = T)
+            line_intensity_2 = int_2[b_line_1_2]
             int_line_2 = mean(line_intensity_2)
+            
             intensity_diff = abs(int_line_1 - int_line_2)
             
-            plot(int_2)
-            plot(streetLengthInfo_null[[i]][[j]]$buffer, add = T, border = 'green')
-            plot(longStrBroke[[k]][[i]][[j]]$shorterStreet, add = T, col = 'green')
+            # plot(int_2)
+            # plot(streetLengthInfo_null[[i]][[j]]$buffer, add = T, border = 'green')
+            # plot(longStrBroke[[k]][[i]][[j]]$shorterStreet, add = T, col = 'green')
             nullStr_point_data$DATA[rowNum,] = c(k, i, j,
                                                  streetLengthInfo_null[[i]][[j]]$streetLength1,
                                                  streetLengthInfo_null[[i]][[j]]$streetLength2,
