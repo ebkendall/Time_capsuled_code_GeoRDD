@@ -1,4 +1,4 @@
-for (k in 3:10) {
+for (k in 1:12) {
 
     load(paste0("../Output_tree/nullGridInfo/nullData", k, "_1.dat"))
     nullStr_point_data$DATA = nullStr_point_data$DATA[nullStr_point_data$DATA$precinct != -1, ]

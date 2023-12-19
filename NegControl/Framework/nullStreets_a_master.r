@@ -1,6 +1,7 @@
 # library(sp); library(sf); library(rgeos); library(raster)
 library(spatstat)
 library(sp)
+library(rgeos)
 
 load('../Data/nycSub.RData')
 load("../Data/treesByPrec.RData")    # gridWithin_prec treesByPrec
@@ -11,7 +12,8 @@ adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
 
 for (index in 1:length(adjust_val)) {
   
-  for(k in 1:77) {
+  # for(k in 1:77) {
+    k = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
     
     set.seed(k)
 
@@ -112,6 +114,34 @@ for (index in 1:length(adjust_val)) {
             prec_2_x = treesByPrec[[k]]$x[p2 > 0]
             prec_2_y = treesByPrec[[k]]$y[p2 > 0]
             
+            # Random assignment of points in the buffer ------------------------
+            # poly3 = gBuffer(border_line_1_2, width=1000)
+            # p3_1 = point.in.polygon(treesByPrec[[k]]$x, treesByPrec[[k]]$y,
+            #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
+            #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
+
+            # prec_3_x_final = treesByPrec[[k]]$x[((p1 == 0) & (p2 == 0)) & (p3_1 > 0)]
+            # prec_3_y_final = treesByPrec[[k]]$y[((p1 == 0) & (p2 == 0)) & (p3_1 > 0)]
+            
+            # assign_p3 = runif(n = length(prec_3_x_final))
+            # prec_3_x_1 = prec_3_x_final[assign_p3 > 0.5]
+            # prec_3_y_1 = prec_3_y_final[assign_p3 > 0.5]
+            # prec_3_x_2 = prec_3_x_final[assign_p3 <= 0.5]
+            # prec_3_y_2 = prec_3_y_final[assign_p3 <= 0.5]
+            
+            # prec_1_x = c(prec_1_x, prec_3_x_1)
+            # prec_1_y = c(prec_1_y, prec_3_y_1)
+            # prec_2_x = c(prec_2_x, prec_3_x_2)
+            # prec_2_y = c(prec_2_y, prec_3_y_2)
+
+            # plot(streetLengthInfo_null[[i]][[j]]$buffer)
+            # points(prec_1_x, prec_1_y)
+            # points(prec_2_x, prec_2_y, col = 'red')
+            # points(prec_3_x_final, prec_3_y_final, col = 'green')
+            # return(0)
+            # ------------------------------------------------------------------
+
+
             pp_1 = ppp(prec_1_x, prec_1_y, c(box_x_min, box_x_max), c(box_y_min, box_y_max))
             int_1 = density.ppp(pp_1, adjust = adjust_val[index], scalekernel = T)
             line_intensity_1 = int_1[b_line_1_2]
@@ -123,8 +153,6 @@ for (index in 1:length(adjust_val)) {
             int_line_2 = mean(line_intensity_2)
             
             intensity_diff = abs(int_line_1 - int_line_2)
-            
-            
             
             nullStr_point_data$DATA[rowNum,] = c(k, i, j, s1, s2, area1, area2, 
                                                  T, count1, count2, pval,
@@ -141,6 +169,6 @@ for (index in 1:length(adjust_val)) {
 
     save(nullStr_point_data, file=paste0("../Output_tree/nullGridInfo/nullData", 
           index, "_", k,".dat", sep=''))
-  }
+  # }
 
 }

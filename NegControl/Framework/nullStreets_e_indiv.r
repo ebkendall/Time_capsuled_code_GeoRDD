@@ -1,13 +1,15 @@
 set.seed(100)
 
-match_count <- c(160, 880, 480, 160, 1020, 140, 140, 300)
+# match_count <- c(160, 880, 480, 160, 1020, 140, 140, 300) 
+match_count = 300
 load("../Data/indexList_MAIN.RData")
 
-perc_pval_match = vector(mode = "list", length = 10)
-p_val_df <- vector(mode = "list", length = 10)
+adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
 
-for (k in 3:10) {
+perc_pval_match = vector(mode = "list", length = length(adjust_val))
+p_val_df <- vector(mode = "list", length = length(adjust_val))
 
+for (k in 1:length(adjust_val)) {
   print(k)
   
   load(paste0('../Output_tree/nullGridInfo/combinedMatchingSetup', k, ".dat"))
@@ -34,17 +36,19 @@ for (k in 3:10) {
   v1 = sd(combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2, na.rm=TRUE)^2
   v2 = sd(combinedMatchingSetupFix2$ratioStreet, na.rm=TRUE)^2
 
-  t_stat_streets = abs(combinedMatchingSetupFix2$count1 / combinedMatchingSetupFix2$streets1
-                       - combinedMatchingSetupFix2$count2 / combinedMatchingSetupFix2$streets2)
-  t_stat_streets_orig = abs(sim_orig$DATA$count1 / sim_orig$DATA$streets1
-                            - sim_orig$DATA$count2 / sim_orig$DATA$streets2)
+  # t_stat_streets = abs(combinedMatchingSetupFix2$count1 / combinedMatchingSetupFix2$streets1
+  #                      - combinedMatchingSetupFix2$count2 / combinedMatchingSetupFix2$streets2)
+  # t_stat_streets_orig = abs(sim_orig$DATA$count1 / sim_orig$DATA$streets1
+  #                           - sim_orig$DATA$count2 / sim_orig$DATA$streets2)
+  t_stat_streets = combinedMatchingSetupFix2$spatialDiff
+  t_stat_streets_orig = sim_orig$DATA$spatialDiff
   
   row_num = 1
   perc_pval_match[[k]] = data.frame("num_match" = match_count,
                                     "perc_pval_less_05" = rep(NA, length(match_count)))
   p_val_df[[k]] = matrix(nrow = length(match_count), ncol = nrow(sim_orig$DATA))
 
-  j = match_count[k-2]
+  j = match_count
   print(paste0("Match Num: ", j))
 
   pval = rep(NA, nrow(sim_orig$DATA))

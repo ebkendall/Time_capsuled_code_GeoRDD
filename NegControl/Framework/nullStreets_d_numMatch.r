@@ -3,7 +3,7 @@ set.seed(10)
 match_count <- seq(20, 1200, by = 20)
 load("../Data/indexList_MAIN.RData")
 
-for (k in 3:10) {
+for (k in 1:8) {
 
     print(k)
 
@@ -75,10 +75,10 @@ for (k in 3:10) {
 library(tidyverse, quietly = T)
 library(gridExtra, quietly = T)
 p = vector(mode = 'list', length = 8)
-for(i in 3:10) {
+for(i in 1:12) {
     load(paste0('../Output_tree/combination/perc_pval_match_street', i, '.dat'))
     pval = perc_pval_match[1:60,]
-    p[[i-2]] = ggplot(pval, aes( y=perc_pval_less_05, x=num_match)) + 
+    p[[i]] = ggplot(pval, aes( y=perc_pval_less_05, x=num_match)) + 
         geom_point(color = "red", size = 2) +
         geom_smooth(method = "loess", formula = y ~ x) +
         ggtitle(paste0("Matching's Effect on Type I Error (",i,"00 ft)")) +
@@ -98,4 +98,8 @@ grid.arrange(p[[1]], p[[2]], ncol = 1, nrow = 2)
 grid.arrange(p[[3]], p[[4]], ncol = 1, nrow = 2)
 grid.arrange(p[[5]], p[[6]], ncol = 1, nrow = 2)
 grid.arrange(p[[7]], p[[8]], ncol = 1, nrow = 2)
+grid.arrange(p[[9]], p[[10]], ncol = 1, nrow = 2)
+grid.arrange(p[[11]], p[[12]], ncol = 1, nrow = 2)
 dev.off()
+
+# 300 is number of matches

@@ -1,6 +1,7 @@
 # library(sp); library(sf); library(rgeos); library(raster)
 library(spatstat)
 library(sp)
+library(rgeos)
 
 load("../Data/nycSub.RData")
 load("../Data/ind_prec_df.rda")
@@ -12,9 +13,10 @@ Dir = '../Output/origGridInfo/'
 
 adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
 
-for (k in 1:length(adjust_val)) {
+# for (k in 1:length(adjust_val)) {
+  k = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   print(k)
-  buff_ind = k + 1
+  buff_ind = 10
   
   sim_orig <- list(DATA = data.frame("area1" = rep(NA,164), "area2" = rep(NA,164), 
                                      "streets1" = rep(NA, 164), "streets2" = rep(NA, 164),
@@ -141,16 +143,11 @@ for (k in 1:length(adjust_val)) {
                         b_c_1_2[2:nrow(b_c_1_2),"x"],
                         b_c_1_2[2:nrow(b_c_1_2),"y"],
                         Window(b_line_pp))
-    # Points
-    prec_1_x = dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec1[i]]
-    prec_1_y = dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec1[i]]
-    prec_2_x = dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec2[i]]
-    prec_2_y = dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec2[i]]
-    
+
     # Defining window
     prec1 = nycSub[prec_ind_1, ]
     prec2 = nycSub[prec_ind_2, ]
-    
+
     box_x_min = min(c(prec1@polygons[[1]]@Polygons[[1]]@coords[,1], 
                       prec2@polygons[[1]]@Polygons[[1]]@coords[,1]))
     box_x_max = max(c(prec1@polygons[[1]]@Polygons[[1]]@coords[,1], 
@@ -177,13 +174,57 @@ for (k in 1:length(adjust_val)) {
             box_y_max = max(c(box_y_max, prec2@polygons[[1]]@Polygons[[pj]]@coords[,2]))
         }
     }
+
+    # Keeping center points ---------------------------------------------------
+    # prec_1_x = dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec1[i]]
+    # prec_1_y = dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec1[i]]
+    # prec_2_x = dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec2[i]]
+    # prec_2_y = dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec2[i]]
+    #  ------------------------------------------------------------------------
+
+    # Removing center points --------------------------------------------------
+    poly3 = gBuffer(border_line_1_2, width= buff_ind * 100)
+    p3_1 = point.in.polygon(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"],
+                            poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
+                            poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
+    p3_2 = point.in.polygon(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"],
+                            poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
+                            poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
+
+    prec_1_x = dataArr_prec_1[(p3_1 == 0) | ((p3_1 > 0 & arr_1_prec_a > 0) | (p3_1 > 0 & arr_1_prec_b > 0)),"x_coord_cd"]
+    prec_1_y = dataArr_prec_1[(p3_1 == 0) | ((p3_1 > 0 & arr_1_prec_a > 0) | (p3_1 > 0 & arr_1_prec_b > 0)),"y_coord_cd"]
+    prec_2_x = dataArr_prec_2[(p3_2 == 0) | ((p3_2 > 0 & arr_2_prec_a > 0) | (p3_2 > 0 & arr_2_prec_b > 0)),"x_coord_cd"]
+    prec_2_y = dataArr_prec_2[(p3_2 == 0) | ((p3_2 > 0 & arr_2_prec_a > 0) | (p3_2 > 0 & arr_2_prec_b > 0)),"y_coord_cd"]
+
+    # Focus on points only in the box
+    poly_box = matrix(c(box_x_min, box_y_max, 
+                        box_x_min, box_y_min, 
+                        box_x_max, box_y_min,
+                        box_x_max, box_y_max), ncol = 2, byrow = T)
+    poly_arr1 = point.in.polygon(prec_1_x, prec_1_y, poly_box[,1], poly_box[,2])
+    poly_arr2 = point.in.polygon(prec_2_x, prec_2_y, poly_box[,1], poly_box[,2])
+
+    prec_1_x = prec_1_x[poly_arr1 > 0]
+    prec_1_y = prec_1_y[poly_arr1 > 0]
+    prec_2_x = prec_2_x[poly_arr2 > 0]
+    prec_2_y = prec_2_y[poly_arr2 > 0]
+
+    # plot(poly_box[,1], poly_box[,2])
+    # plot(prec1, add = T)
+    # plot(prec2, add = T)
+    # plot(poly1, add = T)
+    # plot(poly2, add = T)
+    # points(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"])
+    # points(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"])
+    # points(prec_1_x, prec_1_y, col = 'red')
+    # points(prec_2_x, prec_2_y, col = 'green')
+    # return(0)
+    #  ------------------------------------------------------------------------
     
-    pp_1 = ppp(prec_1_x, prec_1_y, 
-               c(min(c(prec_1_x, prec_2_x, box_x_min)), max(c(prec_1_x, prec_2_x, box_x_max))), 
-               c(min(c(prec_1_y, prec_2_y, box_y_min)), max(c(prec_1_y, prec_2_y, box_y_max))))
-    pp_2 = ppp(prec_2_x, prec_2_y, 
-               c(min(c(prec_1_x, prec_2_x, box_x_min)), max(c(prec_1_x, prec_2_x, box_x_max))), 
-               c(min(c(prec_1_y, prec_2_y, box_y_min)), max(c(prec_1_y, prec_2_y, box_y_max))))
+    pp_1 = ppp(prec_1_x, prec_1_y, c(box_x_min, box_x_max), 
+                                   c(box_y_min, box_y_max))
+    pp_2 = ppp(prec_2_x, prec_2_y, c(box_x_min, box_x_max), 
+                                   c(box_y_min, box_y_max))
     
     # Calculating the spatial component
     int_1 = density.ppp(pp_1, adjust = adjust_val[k], scalekernel = T)
@@ -202,4 +243,4 @@ for (k in 1:length(adjust_val)) {
   }
 
   save(sim_orig, file = paste0(Dir, 'sim_orig_', k, '.dat'))
-}
+# }
