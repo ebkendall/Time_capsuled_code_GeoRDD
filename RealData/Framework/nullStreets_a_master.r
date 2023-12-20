@@ -5,10 +5,12 @@ library(rgeos)
 load('../Data/dataArr_sub.rda') # dataArr_sub
 load('../Data/dataOff_sub.rda') # dataOff_sub
 load('../Data/nycSub.RData')
-load('../Data/Street_Seg/streets10.dat') # longStrBroke
 
 # Iterate through each buffer width
 adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
+buff_ind = 5
+
+load(paste0('../Data/Street_Seg/streets', buff_ind, '.dat')) # longStrBroke
 
 for (index in 1:length(adjust_val)) {
     
@@ -37,7 +39,7 @@ for (index in 1:length(adjust_val)) {
                               OFF_IND_2 = vector(mode = 'list', length = l))
     rowNum = 1
 
-    load(paste0("../Data/OutputStrInfo_realData/strInfo_10_", k, ".dat")) # contains the buffer object
+    load(paste0("../Data/OutputStrInfo_realData/strInfo_", buff_ind, "_", k, ".dat")) # contains the buffer object
 
     print(paste0("Total length: ", length(streetLengthInfo_null)))
     for(i in 1:length(streetLengthInfo_null)) {
@@ -138,14 +140,13 @@ for (index in 1:length(adjust_val)) {
             prec_2_y = arr_sub$y_coord_cd[arr_2 > 0]
 
             # Random assignment of points in the buffer ------------------------
-            # poly3 = gBuffer(border_line_1_2, width=1000)
+            # poly3 = gBuffer(border_line_1_2, width=buff_ind * 100)
             # p3_1 = point.in.polygon(arr_sub$x_coord_cd, arr_sub$y_coord_cd,
             #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
             #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
 
             # prec_3_x_final = arr_sub$x_coord_cd[((arr_1 == 0) & (arr_2 == 0)) & (p3_1 > 0)]
             # prec_3_y_final = arr_sub$y_coord_cd[((arr_1 == 0) & (arr_2 == 0)) & (p3_1 > 0)]
-            
             
             # assign_p3 = runif(n = length(prec_3_x_final))
             # prec_3_x_1 = prec_3_x_final[assign_p3 > 0.5]
@@ -177,9 +178,6 @@ for (index in 1:length(adjust_val)) {
             
             intensity_diff = abs(int_line_1 - int_line_2)
             
-            # plot(int_2)
-            # plot(streetLengthInfo_null[[i]][[j]]$buffer, add = T, border = 'green')
-            # plot(longStrBroke[[k]][[i]][[j]]$shorterStreet, add = T, col = 'green')
             nullStr_point_data$DATA[rowNum,] = c(k, i, j,
                                                  streetLengthInfo_null[[i]][[j]]$streetLength1,
                                                  streetLengthInfo_null[[i]][[j]]$streetLength2,

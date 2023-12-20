@@ -3,7 +3,7 @@ set.seed(10)
 match_count <- seq(20, 1200, by = 20)
 load("../Data/indexList_MAIN.RData")
 
-for (k in 1:8) {
+for (k in 1:12) {
 
     print(k)
 

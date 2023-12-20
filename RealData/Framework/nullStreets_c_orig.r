@@ -16,7 +16,7 @@ adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
 # for (k in 1:length(adjust_val)) {
   k = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
   print(k)
-  buff_ind = 10
+  buff_ind = 5
   
   sim_orig <- list(DATA = data.frame("area1" = rep(NA,164), "area2" = rep(NA,164), 
                                      "streets1" = rep(NA, 164), "streets2" = rep(NA, 164),
@@ -132,7 +132,7 @@ adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
     s2 = totalStreetBuffInfo_NEW[[buff_ind]][[i]]$streetLength2
 
     # Making the border line a spatstat object
-    border_line_1_2 = totalStreetBuffInfo_NEW[[10]][[i]]$centerLine
+    border_line_1_2 = totalStreetBuffInfo_NEW[[buff_ind]][[i]]$centerLine
     
     b_c_1_2 = border_line_1_2@lines[[1]]@Lines[[1]]@coords
     b_line_pp = ppp(b_c_1_2[,"x"], b_c_1_2[,"y"],
@@ -175,7 +175,7 @@ adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
         }
     }
 
-    # Keeping center points ---------------------------------------------------
+    # Random assignment of center points --------------------------------------
     # prec_1_x = dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec1[i]]
     # prec_1_y = dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec1[i]]
     # prec_2_x = dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec2[i]]
@@ -195,6 +195,7 @@ adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
     prec_1_y = dataArr_prec_1[(p3_1 == 0) | ((p3_1 > 0 & arr_1_prec_a > 0) | (p3_1 > 0 & arr_1_prec_b > 0)),"y_coord_cd"]
     prec_2_x = dataArr_prec_2[(p3_2 == 0) | ((p3_2 > 0 & arr_2_prec_a > 0) | (p3_2 > 0 & arr_2_prec_b > 0)),"x_coord_cd"]
     prec_2_y = dataArr_prec_2[(p3_2 == 0) | ((p3_2 > 0 & arr_2_prec_a > 0) | (p3_2 > 0 & arr_2_prec_b > 0)),"y_coord_cd"]
+    #  ------------------------------------------------------------------------
 
     # Focus on points only in the box
     poly_box = matrix(c(box_x_min, box_y_max, 
@@ -219,7 +220,6 @@ adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
     # points(prec_1_x, prec_1_y, col = 'red')
     # points(prec_2_x, prec_2_y, col = 'green')
     # return(0)
-    #  ------------------------------------------------------------------------
     
     pp_1 = ppp(prec_1_x, prec_1_y, c(box_x_min, box_x_max), 
                                    c(box_y_min, box_y_max))

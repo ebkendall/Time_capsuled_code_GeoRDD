@@ -1,6 +1,5 @@
 set.seed(100)
 
-# match_count <- c(160, 880, 480, 160, 1020, 140, 140, 300) 
 match_count = 300
 load("../Data/indexList_MAIN.RData")
 
@@ -66,7 +65,9 @@ for (k in 1:length(adjust_val)) {
     w50 = order(dist_temp)[1:j]
     
     null_dist = t_stat_streets[w50]
-    pval[ii] = mean(null_dist > stat_temp)
+    pval[ii] = mean(null_dist > stat_temp, na.rm=TRUE)
+
+    if(sum(is.nan(null_dist)) > 0) print(paste0("WARNING: ", j, ", ", ii))
   }
 
   perc_pval = mean(pval < 0.05, na.rm=TRUE)

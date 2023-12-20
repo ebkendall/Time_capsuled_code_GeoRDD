@@ -5,10 +5,12 @@ library(rgeos)
 
 load('../Data/nycSub.RData')
 load("../Data/treesByPrec.RData")    # gridWithin_prec treesByPrec
-load('../../RealData/Data/Street_Seg/streets10.dat') # longStrBroke
 
 # Iterate through each buffer width
 adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
+buff_ind = 5
+
+load(paste0('../../RealData/Data/Street_Seg/streets', buff_ind, '.dat')) # longStrBroke
 
 for (index in 1:length(adjust_val)) {
   
@@ -32,7 +34,7 @@ for (index in 1:length(adjust_val)) {
                               GRID_IND_2 = vector(mode = 'list', length = l))
     rowNum = 1
 
-    load(paste0("../../RealData/Data/OutputStrInfo_realData/strInfo_", 10, "_", k, ".dat")) # contains the buffer object
+    load(paste0("../../RealData/Data/OutputStrInfo_realData/strInfo_", buff_ind, "_", k, ".dat")) # contains the buffer object
 
     print(paste0("Total length: ", length(streetLengthInfo_null)))
     for(i in 1:length(streetLengthInfo_null)) {
@@ -115,7 +117,7 @@ for (index in 1:length(adjust_val)) {
             prec_2_y = treesByPrec[[k]]$y[p2 > 0]
             
             # Random assignment of points in the buffer ------------------------
-            # poly3 = gBuffer(border_line_1_2, width=1000)
+            # poly3 = gBuffer(border_line_1_2, width=buff_ind * 100)
             # p3_1 = point.in.polygon(treesByPrec[[k]]$x, treesByPrec[[k]]$y,
             #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
             #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
