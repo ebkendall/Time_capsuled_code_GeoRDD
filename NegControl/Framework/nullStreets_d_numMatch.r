@@ -3,7 +3,9 @@ set.seed(10)
 match_count <- seq(20, 1200, by = 20)
 load("../Data/indexList_MAIN.RData")
 
-for (k in 1:12) {
+adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
+
+for (k in 1:length(adjust_val)) {
 
     print(k)
 
@@ -31,10 +33,12 @@ for (k in 1:12) {
     v1 = sd(combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2, na.rm=TRUE)^2
     v2 = sd(combinedMatchingSetupFix2$ratioStreet, na.rm=TRUE)^2
     
-    t_stat_streets = abs(combinedMatchingSetupFix2$count1 / combinedMatchingSetupFix2$streets1
-                         - combinedMatchingSetupFix2$count2 / combinedMatchingSetupFix2$streets2)
-    t_stat_streets_orig = abs(sim_orig$DATA$count1 / sim_orig$DATA$streets1
-                              - sim_orig$DATA$count2 / sim_orig$DATA$streets2)
+    # t_stat_streets = abs(combinedMatchingSetupFix2$count1 / combinedMatchingSetupFix2$streets1
+    #                      - combinedMatchingSetupFix2$count2 / combinedMatchingSetupFix2$streets2)
+    # t_stat_streets_orig = abs(sim_orig$DATA$count1 / sim_orig$DATA$streets1
+    #                           - sim_orig$DATA$count2 / sim_orig$DATA$streets2)
+    t_stat_streets = combinedMatchingSetupFix2$spatialDiff
+    t_stat_streets_orig = sim_orig$DATA$spatialDiff
 
     row_num = 1
     perc_pval_match = data.frame("num_match" = match_count,

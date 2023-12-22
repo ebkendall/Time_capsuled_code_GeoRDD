@@ -140,24 +140,24 @@ for (index in 1:length(adjust_val)) {
             prec_2_y = arr_sub$y_coord_cd[arr_2 > 0]
 
             # Random assignment of points in the buffer ------------------------
-            # poly3 = gBuffer(border_line_1_2, width=buff_ind * 100)
-            # p3_1 = point.in.polygon(arr_sub$x_coord_cd, arr_sub$y_coord_cd,
-            #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
-            #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
+            poly3 = gBuffer(border_line_1_2, width=buff_ind * 100)
+            p3_1 = point.in.polygon(arr_sub$x_coord_cd, arr_sub$y_coord_cd,
+                                    poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
+                                    poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
 
-            # prec_3_x_final = arr_sub$x_coord_cd[((arr_1 == 0) & (arr_2 == 0)) & (p3_1 > 0)]
-            # prec_3_y_final = arr_sub$y_coord_cd[((arr_1 == 0) & (arr_2 == 0)) & (p3_1 > 0)]
+            prec_3_x_final = arr_sub$x_coord_cd[((arr_1 == 0) & (arr_2 == 0)) & (p3_1 > 0)]
+            prec_3_y_final = arr_sub$y_coord_cd[((arr_1 == 0) & (arr_2 == 0)) & (p3_1 > 0)]
             
-            # assign_p3 = runif(n = length(prec_3_x_final))
-            # prec_3_x_1 = prec_3_x_final[assign_p3 > 0.5]
-            # prec_3_y_1 = prec_3_y_final[assign_p3 > 0.5]
-            # prec_3_x_2 = prec_3_x_final[assign_p3 <= 0.5]
-            # prec_3_y_2 = prec_3_y_final[assign_p3 <= 0.5]
+            assign_p3 = runif(n = length(prec_3_x_final))
+            prec_3_x_1 = prec_3_x_final[assign_p3 > 0.5]
+            prec_3_y_1 = prec_3_y_final[assign_p3 > 0.5]
+            prec_3_x_2 = prec_3_x_final[assign_p3 <= 0.5]
+            prec_3_y_2 = prec_3_y_final[assign_p3 <= 0.5]
             
-            # prec_1_x = c(prec_1_x, prec_3_x_1)
-            # prec_1_y = c(prec_1_y, prec_3_y_1)
-            # prec_2_x = c(prec_2_x, prec_3_x_2)
-            # prec_2_y = c(prec_2_y, prec_3_y_2)
+            prec_1_x = c(prec_1_x, prec_3_x_1)
+            prec_1_y = c(prec_1_y, prec_3_y_1)
+            prec_2_x = c(prec_2_x, prec_3_x_2)
+            prec_2_y = c(prec_2_y, prec_3_y_2)
             
             # plot(streetLengthInfo_null[[i]][[j]]$buffer)
             # points(prec_1_x, prec_1_y)

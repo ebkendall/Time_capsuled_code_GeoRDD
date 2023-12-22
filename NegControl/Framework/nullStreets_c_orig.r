@@ -13,21 +13,20 @@ Dir = '../Output_tree/origGridInfo/'
 print(Dir)
 
 adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
+buff_ind = 5    
 
 # for (k in 1:length(adjust_val)) {
-  k = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
-  print(k)
-  set.seed(k)
-  
-  buff_ind = 10    
-
-  sim_orig <- list(DATA = data.frame("area1" = rep(NA,164), "area2" = rep(NA,164), 
-                                     "streets1" = rep(NA, 164), "streets2" = rep(NA, 164),
-                                     "count1" = rep(NA,164), "count2" = rep(NA,164),
-                                     "naive_pval" = rep(NA, 164),
-                                     "int_1" = rep(NA, 164), "int_2" = rep(NA, 164), 
-                                     "spatialDiff" = rep(NA, 164)))
+    k = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
+    print(k)
+    set.seed(k)
     
+    sim_orig <- list(DATA = data.frame("area1" = rep(NA,164), "area2" = rep(NA,164), 
+                                        "streets1" = rep(NA, 164), "streets2" = rep(NA, 164),
+                                        "count1" = rep(NA,164), "count2" = rep(NA,164),
+                                        "naive_pval" = rep(NA, 164),
+                                        "int_1" = rep(NA, 164), "int_2" = rep(NA, 164), 
+                                        "spatialDiff" = rep(NA, 164)))
+        
     for (i in indexList_MAIN) {
         print(i)
         prec_ind_1 = which(nycSub$Precinct == ind_prec_df$prec1[i])
@@ -67,9 +66,20 @@ adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
         }
         
         # Making the border line a spatstat object
-        border_line_1_2 = totalStreetBuffInfo_NEW[[10]][[i]]$centerLine
-        
+        border_line_1_2 = totalStreetBuffInfo_NEW[[buff_ind]][[i]]$centerLine
         b_c_1_2 = border_line_1_2@lines[[1]]@Lines[[1]]@coords
+        
+        # Make sure the line is actually linear
+        endpts = which(multiplicity(b_c_1_2) == 1)
+        if(length(endpts) > 2) {
+            print(paste0(i, " problem!"))
+        } 
+        if(endpts[1] != 1 | endpts[2] != nrow(b_c_1_2)) {
+            print(paste0(i, " out of order"))
+            b_c_1_2_new = rbind(b_c_1_2[endpts[2]:nrow(b_c_1_2), ], b_c_1_2[1:endpts[1], ])
+            b_c_1_2 = b_c_1_2_new
+        }
+
         b_line_pp = ppp(b_c_1_2[,"x"], b_c_1_2[,"y"],
                         c(min(b_c_1_2[,"x"]), max(b_c_1_2[,"x"])), 
                         c(min(b_c_1_2[,"y"]), max(b_c_1_2[,"y"])))
@@ -205,5 +215,5 @@ adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
         if(count1 == 0 & count2 == 0) print(paste0("No trees: ", k, ", ", i))
     }
 
-  save(sim_orig, file = paste0(Dir, 'sim_orig_', k, '.dat'))
+    save(sim_orig, file = paste0(Dir, 'sim_orig_', k, '.dat'))
 # }

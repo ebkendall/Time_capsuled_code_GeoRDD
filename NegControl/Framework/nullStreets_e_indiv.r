@@ -1,6 +1,6 @@
 set.seed(100)
 
-match_count = 300
+match_count = c(180, 240, 200, 500, 380, 340, 500, 180, 180, 740, 720, 700)
 load("../Data/indexList_MAIN.RData")
 
 adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
@@ -47,7 +47,7 @@ for (k in 1:length(adjust_val)) {
                                     "perc_pval_less_05" = rep(NA, length(match_count)))
   p_val_df[[k]] = matrix(nrow = length(match_count), ncol = nrow(sim_orig$DATA))
 
-  j = match_count
+  j = match_count[k]
   print(paste0("Match Num: ", j))
 
   pval = rep(NA, nrow(sim_orig$DATA))
