@@ -490,3 +490,43 @@ for (ii in indexList_MAIN) {
     sigma_mat2[ii, ] = c(sigma_big1, sigma_big2, sigma_big_diggle1, sigma_big_diggle2)
 }
 dev.off()
+
+prec_i = 77
+prec_i_ind = which(nycSub$Precinct == 77)
+prec_1_shape = nycSub[prec_i_ind, ]
+arr_i_x = dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == prec_i]
+arr_i_y = dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == prec_i]
+
+box_x_min = min(prec_1_shape@polygons[[1]]@Polygons[[1]]@coords[,1])
+box_x_max = max(prec_1_shape@polygons[[1]]@Polygons[[1]]@coords[,1])
+box_y_min = min(prec_1_shape@polygons[[1]]@Polygons[[1]]@coords[,2])
+box_y_max = max(prec_1_shape@polygons[[1]]@Polygons[[1]]@coords[,2])
+
+poly_box = matrix(c(box_x_min, box_y_max, 
+                    box_x_min, box_y_min, 
+                    box_x_max, box_y_min,
+                    box_x_max, box_y_max), ncol = 2, byrow = T)
+poly_arr1 = point.in.polygon(arr_i_x, arr_i_y, poly_box[,1], poly_box[,2])
+arr_i_x = arr_i_x[poly_arr1 > 0]
+arr_i_y = arr_i_y[poly_arr1 > 0]
+
+pp_1 = ppp(arr_i_x, arr_i_y, c(box_x_min, box_x_max), 
+                             c(box_y_min, box_y_max))
+single_1 <- !duplicated(pp_1)
+m1 <- multiplicity(pp_1)
+pp_1_weight <- pp_1[single_1] %mark% m1[single_1]
+
+sigma_big_diggle1 = bw.diggle(pp_1_weight, weights = pp_1_weight$marks)
+
+pdf("new_adjust_test.pdf")
+par(mfrow=c(2,2))
+adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
+for(i in 1:length(adjust_val)) {
+    int_big_diggle1 = density.ppp(pp_1_weight, weights = pp_1_weight$marks, 
+                                  sigma = sigma_big_diggle1, adjust = adjust_val[i])
+    plot(int_big_diggle1, main = adjust_val[i])
+    plot(prec_1_shape, add = T)
+}
+dev.off()
+
+

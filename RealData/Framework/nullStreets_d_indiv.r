@@ -1,6 +1,7 @@
 set.seed(2023)
 
-match_count = c(180, 240, 200, 500, 380, 340, 500, 180, 180, 740, 720, 700)
+# match_count = c(180, 240, 200, 500, 380, 340, 500, 180, 180, 740, 720, 700)
+match_count = c(220, 100, 200, 440, 380, 1200, 500, 540, 600, 700, 700, 700)
 load("../Data/indexList_MAIN.RData")
 
 adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
@@ -46,13 +47,13 @@ for (k in 1:length(adjust_val)) {
     sim_orig$DATA$n_off_2_prec[which_zeros_orig] = sim_orig$DATA$n_off_2_prec[which_zeros_orig] + 1
 
 
-    v1 = sd(combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2, na.rm=TRUE)^2
-    # v1 = sd(combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2, na.rm=TRUE)^2
+    # v1 = sd(combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2, na.rm=TRUE)^2
+    v1 = sd(combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2, na.rm=TRUE)^2
 
-    rat_off = combinedMatchingSetupFix2$n_off_1 / combinedMatchingSetupFix2$n_off_2
-    rat_off[rat_off < 1] = 1 / rat_off[rat_off < 1]
-    v2 = sd(rat_off, na.rm=TRUE)^2
-    # v2 = sd(combinedMatchingSetupFix2$ratioStreet, na.rm=TRUE)^2
+    # rat_off = combinedMatchingSetupFix2$n_off_1 / combinedMatchingSetupFix2$n_off_2
+    # rat_off[rat_off < 1] = 1 / rat_off[rat_off < 1]
+    # v2 = sd(rat_off, na.rm=TRUE)^2
+    v2 = sd(combinedMatchingSetupFix2$ratioStreet, na.rm=TRUE)^2
 
     # t_stat = abs(combinedMatchingSetupFix2$n_arr_1 / combinedMatchingSetupFix2$n_off_1
     #              - combinedMatchingSetupFix2$n_arr_2 / combinedMatchingSetupFix2$n_off_2)
@@ -73,19 +74,19 @@ for (k in 1:length(adjust_val)) {
 
     for (ii in indexList_MAIN) {
         ## find matches
-        off_temp = sim_orig$DATA$n_off_1_prec[ii] + sim_orig$DATA$n_off_2_prec[ii]
-        ratio_temp = max(sim_orig$DATA$n_off_1_prec[ii] / sim_orig$DATA$n_off_2_prec[ii],
-                            sim_orig$DATA$n_off_2_prec[ii] / sim_orig$DATA$n_off_1_prec[ii])
-        # off_temp = sim_orig$DATA$streets1[ii] + sim_orig$DATA$streets2[ii]
-        # ratio_temp = max(sim_orig$DATA$streets1[ii] / sim_orig$DATA$streets2[ii],
-        #                 sim_orig$DATA$streets2[ii] / sim_orig$DATA$streets1[ii])
+        # off_temp = sim_orig$DATA$n_off_1_prec[ii] + sim_orig$DATA$n_off_2_prec[ii]
+        # ratio_temp = max(sim_orig$DATA$n_off_1_prec[ii] / sim_orig$DATA$n_off_2_prec[ii],
+        #                     sim_orig$DATA$n_off_2_prec[ii] / sim_orig$DATA$n_off_1_prec[ii])
+        off_temp = sim_orig$DATA$streets1[ii] + sim_orig$DATA$streets2[ii]
+        ratio_temp = max(sim_orig$DATA$streets1[ii] / sim_orig$DATA$streets2[ii],
+                        sim_orig$DATA$streets2[ii] / sim_orig$DATA$streets1[ii])
 
         stat_temp = t_stat_orig[ii]
 
-        dist_temp = sqrt(((off_temp - (combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2))^2/v1) +
-                            ((ratio_temp - rat_off)^2 / v2))
-        # dist_temp = sqrt(((off_temp - (combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2))^2/v1) +
-        #                     ((ratio_temp - combinedMatchingSetupFix2$ratioStreet)^2 / v2))
+        # dist_temp = sqrt(((off_temp - (combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2))^2/v1) +
+        #                     ((ratio_temp - rat_off)^2 / v2))
+        dist_temp = sqrt(((off_temp - (combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2))^2/v1) +
+                            ((ratio_temp - combinedMatchingSetupFix2$ratioStreet)^2 / v2))
 
         w50 = order(dist_temp)[1:j]
 
