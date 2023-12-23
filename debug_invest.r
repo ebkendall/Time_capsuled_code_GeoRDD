@@ -518,12 +518,13 @@ pp_1_weight <- pp_1[single_1] %mark% m1[single_1]
 
 sigma_big_diggle1 = bw.diggle(pp_1_weight, weights = pp_1_weight$marks)
 
-pdf("new_adjust_test.pdf")
+pdf("new_adjust_test2.pdf")
 par(mfrow=c(2,2))
 adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
 for(i in 1:length(adjust_val)) {
     int_big_diggle1 = density.ppp(pp_1_weight, weights = pp_1_weight$marks, 
-                                  sigma = sigma_big_diggle1, adjust = adjust_val[i])
+                                  sigma = bw.diggle, adjust = adjust_val[i],
+                                  scalekernel = T)
     plot(int_big_diggle1, main = adjust_val[i])
     plot(prec_1_shape, add = T)
 }
