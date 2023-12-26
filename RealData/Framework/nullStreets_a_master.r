@@ -39,11 +39,7 @@ for (index in 1:8) {
                                                 "int_5a" = rep(-1,l), "int_5b" = rep(-1,l), "spatialDiff5" = rep(-1,l),
                                                 "int_6a" = rep(-1,l), "int_6b" = rep(-1,l), "spatialDiff6" = rep(-1,l),
                                                 "int_7a" = rep(-1,l), "int_7b" = rep(-1,l), "spatialDiff7" = rep(-1,l),
-                                                "int_8a" = rep(-1,l), "int_8b" = rep(-1,l), "spatialDiff8" = rep(-1,l)),
-                              ARR_IND_1 = vector(mode = 'list', length = l),
-                              ARR_IND_2 = vector(mode = 'list', length = l),
-                              OFF_IND_1 = vector(mode = 'list', length = l),
-                              OFF_IND_2 = vector(mode = 'list', length = l))
+                                                "int_8a" = rep(-1,l), "int_8b" = rep(-1,l), "spatialDiff8" = rep(-1,l)))
     rowNum = 1
 
     load(paste0("../Data/OutputStrInfo_realData/strInfo_", buff_ind, "_", k, ".dat")) # contains the buffer object
@@ -223,11 +219,6 @@ for (index in 1:8) {
                                                  n_off_1, n_off_2, pval)
 
             nullStr_point_data$INT_SURFACE[rowNum,] = int_surf_vals
-            
-            nullStr_point_data$ARR_IND_1[[rowNum]] = arr_1_ind
-            nullStr_point_data$ARR_IND_2[[rowNum]] = arr_2_ind
-            nullStr_point_data$OFF_IND_1[[rowNum]] = off_1_ind
-            nullStr_point_data$OFF_IND_2[[rowNum]] = off_2_ind
             
             rowNum = rowNum + 1
           }

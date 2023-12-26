@@ -12,20 +12,28 @@ load("../Data/streetsByPrec.RData")
 Dir = '../Output_tree/origGridInfo/'
 print(Dir)
 
-adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
-buff_ind = 5    
+# adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
+adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
 
 # for (k in 1:length(adjust_val)) {
     k = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
     print(k)
     set.seed(k)
     
+    buff_ind = k + 2
+    
     sim_orig <- list(DATA = data.frame("area1" = rep(NA,164), "area2" = rep(NA,164), 
                                         "streets1" = rep(NA, 164), "streets2" = rep(NA, 164),
                                         "count1" = rep(NA,164), "count2" = rep(NA,164),
-                                        "naive_pval" = rep(NA, 164),
-                                        "int_1" = rep(NA, 164), "int_2" = rep(NA, 164), 
-                                        "spatialDiff" = rep(NA, 164)))
+                                        "naive_pval" = rep(NA, 164)),
+                     INT_SURFACE = data.frame("int_1a" = rep(NA,164), "int_1b" = rep(NA,164), "spatialDiff1" = rep(NA,164),
+                                              "int_2a" = rep(NA,164), "int_2b" = rep(NA,164), "spatialDiff2" = rep(NA,164),
+                                              "int_3a" = rep(NA,164), "int_3b" = rep(NA,164), "spatialDiff3" = rep(NA,164),
+                                              "int_4a" = rep(NA,164), "int_4b" = rep(NA,164), "spatialDiff4" = rep(NA,164),
+                                              "int_5a" = rep(NA,164), "int_5b" = rep(NA,164), "spatialDiff5" = rep(NA,164),
+                                              "int_6a" = rep(NA,164), "int_6b" = rep(NA,164), "spatialDiff6" = rep(NA,164),
+                                              "int_7a" = rep(NA,164), "int_7b" = rep(NA,164), "spatialDiff7" = rep(NA,164),
+                                              "int_8a" = rep(NA,164), "int_8b" = rep(NA,164), "spatialDiff8" = rep(NA,164)))
         
     for (i in indexList_MAIN) {
         print(i)
@@ -126,6 +134,35 @@ buff_ind = 5
         prec_2_y = treesByPrec[[prec_ind_2]][,2]
 
         # Random assignment of center points ----------------------------------
+        # poly3 = gBuffer(border_line_1_2, width=buff_ind * 100)
+        # p3_1 = point.in.polygon(prec_1_x, prec_1_y,
+        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
+        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
+        # p3_2 = point.in.polygon(prec_2_x, prec_2_y,
+        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
+        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
+        # 
+        # p3_in_1_x = prec_1_x[(p3_1 > 0) & (p1 == 0)]
+        # p3_in_1_y = prec_1_y[(p3_1 > 0) & (p1 == 0)]
+        # p3_in_2_x = prec_2_x[(p3_2 > 0) & (p2 == 0)]
+        # p3_in_2_y = prec_2_y[(p3_2 > 0) & (p2 == 0)]
+        # 
+        # prec_3_x_final = c(p3_in_1_x, p3_in_2_x)
+        # prec_3_y_final = c(p3_in_1_y, p3_in_2_y)
+        # 
+        # assign_p3 = runif(n = length(prec_3_x_final))
+        # prec_3_x_1 = prec_3_x_final[assign_p3 > 0.5]
+        # prec_3_y_1 = prec_3_y_final[assign_p3 > 0.5]
+        # prec_3_x_2 = prec_3_x_final[assign_p3 <= 0.5]
+        # prec_3_y_2 = prec_3_y_final[assign_p3 <= 0.5]
+        # 
+        # prec_1_x = c(prec_1_x, prec_3_x_1)
+        # prec_1_y = c(prec_1_y, prec_3_y_1)
+        # prec_2_x = c(prec_2_x, prec_3_x_2)
+        # prec_2_y = c(prec_2_y, prec_3_y_2)
+        # ---------------------------------------------------------------------
+
+        # Removing center points -----------------------------------------------
         poly3 = gBuffer(border_line_1_2, width=buff_ind * 100)
         p3_1 = point.in.polygon(prec_1_x, prec_1_y,
                                 poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
@@ -134,39 +171,10 @@ buff_ind = 5
                                 poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
                                 poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
 
-        p3_in_1_x = prec_1_x[(p3_1 > 0) & (p1 == 0)]
-        p3_in_1_y = prec_1_y[(p3_1 > 0) & (p1 == 0)]
-        p3_in_2_x = prec_2_x[(p3_2 > 0) & (p2 == 0)]
-        p3_in_2_y = prec_2_y[(p3_2 > 0) & (p2 == 0)]
-
-        prec_3_x_final = c(p3_in_1_x, p3_in_2_x)
-        prec_3_y_final = c(p3_in_1_y, p3_in_2_y)
-        
-        assign_p3 = runif(n = length(prec_3_x_final))
-        prec_3_x_1 = prec_3_x_final[assign_p3 > 0.5]
-        prec_3_y_1 = prec_3_y_final[assign_p3 > 0.5]
-        prec_3_x_2 = prec_3_x_final[assign_p3 <= 0.5]
-        prec_3_y_2 = prec_3_y_final[assign_p3 <= 0.5]
-        
-        prec_1_x = c(prec_1_x, prec_3_x_1)
-        prec_1_y = c(prec_1_y, prec_3_y_1)
-        prec_2_x = c(prec_2_x, prec_3_x_2)
-        prec_2_y = c(prec_2_y, prec_3_y_2)
-        # ---------------------------------------------------------------------
-
-        # Removing center points -----------------------------------------------
-        # poly3 = gBuffer(border_line_1_2, width=buff_ind * 100)
-        # p3_1 = point.in.polygon(prec_1_x, prec_1_y,
-        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
-        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
-        # p3_2 = point.in.polygon(prec_2_x, prec_2_y,
-        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
-        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
-
-        # prec_1_x = prec_1_x[(p3_1 == 0) | (p3_1 > 0 & p1 > 0)]
-        # prec_1_y = prec_1_y[(p3_1 == 0) | (p3_1 > 0 & p1 > 0)]
-        # prec_2_x = prec_2_x[(p3_2 == 0) | (p3_2 > 0 & p2 > 0)]
-        # prec_2_y = prec_2_y[(p3_2 == 0) | (p3_2 > 0 & p2 > 0)]
+        prec_1_x = prec_1_x[(p3_1 == 0) | (p3_1 > 0 & p1 > 0)]
+        prec_1_y = prec_1_y[(p3_1 == 0) | (p3_1 > 0 & p1 > 0)]
+        prec_2_x = prec_2_x[(p3_2 == 0) | (p3_2 > 0 & p2 > 0)]
+        prec_2_y = prec_2_y[(p3_2 == 0) | (p3_2 > 0 & p2 > 0)]
         # ---------------------------------------------------------------------
 
         # Focus on points only in the box
@@ -193,25 +201,50 @@ buff_ind = 5
         # points(prec_1_x, prec_1_y, col = 'red')
         # return(0)
         
-        pp_1 = ppp(prec_1_x, prec_1_y, c(box_x_min, box_x_max), 
-                                    c(box_y_min, box_y_max))
-        pp_2 = ppp(prec_2_x, prec_2_y, c(box_x_min, box_x_max), 
-                                    c(box_y_min, box_y_max))
+        pp_1 = ppp(prec_1_x, prec_1_y, c(box_x_min, box_x_max), c(box_y_min, box_y_max))
+        pp_2 = ppp(prec_2_x, prec_2_y, c(box_x_min, box_x_max), c(box_y_min, box_y_max))
         
-        
-        # Calculating the spatial component
-        int_1 = density.ppp(pp_1, adjust = adjust_val[k], scalekernel = T)
-        line_intensity_1 = int_1[b_line_1_2]
-        int_line_1 = mean(line_intensity_1)
-        
-        int_2 = density.ppp(pp_2, adjust = adjust_val[k], scalekernel = T)
-        line_intensity_2 = int_2[b_line_1_2]
-        int_line_2 = mean(line_intensity_2)
-        
-        intensity_diff = abs(int_line_1 - int_line_2)
+        # Assigning weights
+        single_1 <- !duplicated(pp_1)
+        m1 <- multiplicity(pp_1)
+        pp_1_weight <- pp_1[single_1] %mark% m1[single_1]
 
-        sim_orig$DATA[i,] = c(area1, area2, s1, s2, count1, count2, pval,
-                            int_line_1, int_line_2, intensity_diff)
+        single_2 <- !duplicated(pp_2)
+        m2 <- multiplicity(pp_2)
+        pp_2_weight <- pp_2[single_2] %mark% m2[single_2]
+
+        # if(length(pp_1_weight$x) == 1 | length(pp_2_weight$x) == 1) next
+
+        int_surf_vals = NULL
+        for(av in 1:length(adjust_val)) {
+            if(count1 > 0) {
+                int_1 = density.ppp(pp_1_weight, weights = pp_1_weight$marks,
+                                    sigma = bw.diggle, adjust = adjust_val[av],
+                                    scalekernel = T)
+                line_intensity_1 = int_1[b_line_1_2]
+                int_line_1 = mean(line_intensity_1)
+            } else {
+                int_line_1 = 0
+            }
+
+            if(count2 > 0) {
+                int_2 = density.ppp(pp_2_weight, weights = pp_2_weight$marks,
+                                    sigma = bw.diggle, adjust = adjust_val[av],
+                                    scalekernel = T)
+                line_intensity_2 = int_2[b_line_1_2]
+                int_line_2 = mean(line_intensity_2)
+            } else {
+                int_line_2 = 0
+            }
+
+            intensity_diff = abs(int_line_1 - int_line_2)
+
+            int_surf_vals = c(int_surf_vals, int_line_1, int_line_2, intensity_diff)
+        }
+        
+        sim_orig$INT_SURFACE[i,] = int_surf_vals
+
+        sim_orig$DATA[i,] = c(area1, area2, s1, s2, count1, count2, pval)
         if(count1 == 0 & count2 == 0) print(paste0("No trees: ", k, ", ", i))
     }
 
