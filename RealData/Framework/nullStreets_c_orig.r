@@ -11,23 +11,32 @@ load('../Data/dataArr_sub.rda') # dataArr_sub
 load('../Data/dataOff_sub.rda') # dataOff_sub
 Dir = '../Output/origGridInfo/'
 
-adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
-buff_ind = 5
+# adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
+adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
 
 # for (k in 1:length(adjust_val)) {
     k = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
     print(k)
+    set.seed(k)
+
+    buff_ind = k + 2
     
-    sim_orig <- list(DATA = data.frame("area1" = rep(NA,164), "area2" = rep(NA,164), 
+    sim_orig <- list(DATA = data.frame( "area1" = rep(NA,164), "area2" = rep(NA,164), 
                                         "streets1" = rep(NA, 164), "streets2" = rep(NA, 164),
                                         "n_arr_1" = rep(NA, 164), "n_arr_2" = rep(NA, 164),
                                         "n_off_1" = rep(NA, 164), "n_off_2" = rep(NA, 164),
                                         "naive_pval" = rep(NA, 164),
                                         "n_arr_1_prec" = rep(NA, 164), "n_arr_2_prec" = rep(NA, 164),
                                         "n_off_1_prec" = rep(NA, 164), "n_off_2_prec" = rep(NA, 164),
-                                        "naive_pval_prec" = rep(NA, 164),
-                                        "int_1" = rep(NA, 164), "int_2" = rep(NA, 164), 
-                                        "spatialDiff" = rep(NA, 164)))
+                                        "naive_pval_prec" = rep(NA, 164)),
+                    INT_SURFACE = data.frame("spatialDiff1" = rep(NA,164),
+                                             "spatialDiff2" = rep(NA,164),
+                                             "spatialDiff3" = rep(NA,164),
+                                             "spatialDiff4" = rep(NA,164),
+                                             "spatialDiff5" = rep(NA,164),
+                                             "spatialDiff6" = rep(NA,164),
+                                             "spatialDiff7" = rep(NA,164),
+                                             "spatialDiff8" = rep(NA,164)))
         
     for (i in indexList_MAIN) {
         print(i)
@@ -187,25 +196,25 @@ buff_ind = 5
         }
 
         # Random assignment of center points --------------------------------------
-        prec_1_x = dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec1[i]]
-        prec_1_y = dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec1[i]]
-        prec_2_x = dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec2[i]]
-        prec_2_y = dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec2[i]]
+        # prec_1_x = dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec1[i]]
+        # prec_1_y = dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec1[i]]
+        # prec_2_x = dataArr_sub$x_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec2[i]]
+        # prec_2_y = dataArr_sub$y_coord_cd[dataArr_sub$arrest_precinct == ind_prec_df$prec2[i]]
         #  ------------------------------------------------------------------------
 
         # Removing center points --------------------------------------------------
-        # poly3 = gBuffer(border_line_1_2, width= buff_ind * 100)
-        # p3_1 = point.in.polygon(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"],
-        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
-        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
-        # p3_2 = point.in.polygon(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"],
-        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
-        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
+        poly3 = gBuffer(border_line_1_2, width= buff_ind * 100)
+        p3_1 = point.in.polygon(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"],
+                                poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
+                                poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
+        p3_2 = point.in.polygon(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"],
+                                poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
+                                poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
 
-        # prec_1_x = dataArr_prec_1[(p3_1 == 0) | ((p3_1 > 0 & arr_1_prec_a > 0) | (p3_1 > 0 & arr_1_prec_b > 0)),"x_coord_cd"]
-        # prec_1_y = dataArr_prec_1[(p3_1 == 0) | ((p3_1 > 0 & arr_1_prec_a > 0) | (p3_1 > 0 & arr_1_prec_b > 0)),"y_coord_cd"]
-        # prec_2_x = dataArr_prec_2[(p3_2 == 0) | ((p3_2 > 0 & arr_2_prec_a > 0) | (p3_2 > 0 & arr_2_prec_b > 0)),"x_coord_cd"]
-        # prec_2_y = dataArr_prec_2[(p3_2 == 0) | ((p3_2 > 0 & arr_2_prec_a > 0) | (p3_2 > 0 & arr_2_prec_b > 0)),"y_coord_cd"]
+        prec_1_x = dataArr_prec_1[(p3_1 == 0) | ((p3_1 > 0 & arr_1_prec_a > 0) | (p3_1 > 0 & arr_1_prec_b > 0)),"x_coord_cd"]
+        prec_1_y = dataArr_prec_1[(p3_1 == 0) | ((p3_1 > 0 & arr_1_prec_a > 0) | (p3_1 > 0 & arr_1_prec_b > 0)),"y_coord_cd"]
+        prec_2_x = dataArr_prec_2[(p3_2 == 0) | ((p3_2 > 0 & arr_2_prec_a > 0) | (p3_2 > 0 & arr_2_prec_b > 0)),"x_coord_cd"]
+        prec_2_y = dataArr_prec_2[(p3_2 == 0) | ((p3_2 > 0 & arr_2_prec_a > 0) | (p3_2 > 0 & arr_2_prec_b > 0)),"y_coord_cd"]
         #  ------------------------------------------------------------------------
 
         # Focus on points only in the box
@@ -232,25 +241,51 @@ buff_ind = 5
         # points(prec_2_x, prec_2_y, col = 'green')
         # return(0)
         
-        pp_1 = ppp(prec_1_x, prec_1_y, c(box_x_min, box_x_max), 
-                                    c(box_y_min, box_y_max))
-        pp_2 = ppp(prec_2_x, prec_2_y, c(box_x_min, box_x_max), 
-                                    c(box_y_min, box_y_max))
-        
-        # Calculating the spatial component
-        int_1 = density.ppp(pp_1, adjust = adjust_val[k], scalekernel = T)
-        line_intensity_1 = int_1[b_line_1_2]
-        int_line_1 = mean(line_intensity_1)
+        pp_1 = ppp(prec_1_x, prec_1_y, c(box_x_min, box_x_max), c(box_y_min, box_y_max))
+        pp_2 = ppp(prec_2_x, prec_2_y, c(box_x_min, box_x_max), c(box_y_min, box_y_max))
 
-        int_2 = density.ppp(pp_2, adjust = adjust_val[k], scalekernel = T)
-        line_intensity_2 = int_2[b_line_1_2]
-        int_line_2 = mean(line_intensity_2)
-        
-        intensity_diff = abs(int_line_1 - int_line_2)
+        # Assigning weights
+        single_1 <- !duplicated(pp_1)
+        m1 <- multiplicity(pp_1)
+        pp_1_weight <- pp_1[single_1] %mark% m1[single_1]
+
+        single_2 <- !duplicated(pp_2)
+        m2 <- multiplicity(pp_2)
+        pp_2_weight <- pp_2[single_2] %mark% m2[single_2]
+
+        # if(length(pp_1_weight$x) == 1 | length(pp_2_weight$x) == 1) next
+
+        int_surf_vals = NULL
+        for(av in 1:length(adjust_val)) {
+            if(count1 > 0) {
+                int_1 = density.ppp(pp_1_weight, weights = pp_1_weight$marks,
+                                    sigma = bw.diggle, adjust = adjust_val[av],
+                                    scalekernel = T)
+                line_intensity_1 = int_1[b_line_1_2]
+                int_line_1 = mean(line_intensity_1)
+            } else {
+                int_line_1 = 0
+            }
+
+            if(count2 > 0) {
+                int_2 = density.ppp(pp_2_weight, weights = pp_2_weight$marks,
+                                    sigma = bw.diggle, adjust = adjust_val[av],
+                                    scalekernel = T)
+                line_intensity_2 = int_2[b_line_1_2]
+                int_line_2 = mean(line_intensity_2)
+            } else {
+                int_line_2 = 0
+            }
+
+            intensity_diff = abs(int_line_1 - int_line_2)
+
+            int_surf_vals = c(int_surf_vals, int_line_1, int_line_2, intensity_diff)
+        }
+
+        sim_orig$INT_SURFACE[i,] = int_surf_vals
 
         sim_orig$DATA[i,] = c(area1, area2, s1, s2, n_arr_1, n_arr_2, n_off_1, n_off_2, pval,
-                            n_arr_1_prec, n_arr_2_prec, n_off_1_prec, n_off_2_prec, pval_prec,
-                            int_line_1, int_line_2, intensity_diff)
+                            n_arr_1_prec, n_arr_2_prec, n_off_1_prec, n_off_2_prec, pval_prec)
     }
 
     save(sim_orig, file = paste0(Dir, 'sim_orig_', k, '.dat'))

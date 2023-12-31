@@ -1,6 +1,6 @@
 library(spatstat)
 library(sp)
-# library(rgeos)
+library(rgeos)
 
 load('../Data/dataArr_sub.rda') # dataArr_sub
 load('../Data/dataOff_sub.rda') # dataOff_sub
@@ -32,14 +32,14 @@ for (index in 1:8) {
                                       "area1" = rep(-1,l), "area2" = rep(-1,l), "splitProper" = rep(F,l),
                                       "n_arr_1" = rep(-1,l), "n_arr_2" = rep(-1,l), "n_off_1" = rep(-1,l),
                                       "n_off_2" = rep(-1,l), "naive_pval" = rep(-1,l)),
-                                INT_SURFACE = data.frame("int_1a" = rep(-1,l), "int_1b" = rep(-1,l), "spatialDiff1" = rep(-1,l),
-                                                "int_2a" = rep(-1,l), "int_2b" = rep(-1,l), "spatialDiff2" = rep(-1,l),
-                                                "int_3a" = rep(-1,l), "int_3b" = rep(-1,l), "spatialDiff3" = rep(-1,l),
-                                                "int_4a" = rep(-1,l), "int_4b" = rep(-1,l), "spatialDiff4" = rep(-1,l),
-                                                "int_5a" = rep(-1,l), "int_5b" = rep(-1,l), "spatialDiff5" = rep(-1,l),
-                                                "int_6a" = rep(-1,l), "int_6b" = rep(-1,l), "spatialDiff6" = rep(-1,l),
-                                                "int_7a" = rep(-1,l), "int_7b" = rep(-1,l), "spatialDiff7" = rep(-1,l),
-                                                "int_8a" = rep(-1,l), "int_8b" = rep(-1,l), "spatialDiff8" = rep(-1,l)))
+                                INT_SURFACE = data.frame("spatialDiff1" = rep(-1,l),
+                                                         "spatialDiff2" = rep(-1,l),
+                                                         "spatialDiff3" = rep(-1,l),
+                                                         "spatialDiff4" = rep(-1,l),
+                                                         "spatialDiff5" = rep(-1,l),
+                                                         "spatialDiff6" = rep(-1,l),
+                                                         "spatialDiff7" = rep(-1,l),
+                                                         "spatialDiff8" = rep(-1,l)))
     rowNum = 1
 
     load(paste0("../Data/OutputStrInfo_realData/strInfo_", buff_ind, "_", k, ".dat")) # contains the buffer object
@@ -145,24 +145,24 @@ for (index in 1:8) {
             prec_2_y = arr_sub$y_coord_cd[arr_2 > 0]
 
             # Random assignment of points in the buffer ------------------------
-            # poly3 = gBuffer(border_line_1_2, width=buff_ind * 100)
-            # p3_1 = point.in.polygon(arr_sub$x_coord_cd, arr_sub$y_coord_cd,
-            #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
-            #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
+            poly3 = gBuffer(border_line_1_2, width=buff_ind * 100)
+            p3_1 = point.in.polygon(arr_sub$x_coord_cd, arr_sub$y_coord_cd,
+                                    poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
+                                    poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
 
-            # prec_3_x_final = arr_sub$x_coord_cd[((arr_1 == 0) & (arr_2 == 0)) & (p3_1 > 0)]
-            # prec_3_y_final = arr_sub$y_coord_cd[((arr_1 == 0) & (arr_2 == 0)) & (p3_1 > 0)]
+            prec_3_x_final = arr_sub$x_coord_cd[((arr_1 == 0) & (arr_2 == 0)) & (p3_1 > 0)]
+            prec_3_y_final = arr_sub$y_coord_cd[((arr_1 == 0) & (arr_2 == 0)) & (p3_1 > 0)]
             
-            # assign_p3 = runif(n = length(prec_3_x_final))
-            # prec_3_x_1 = prec_3_x_final[assign_p3 > 0.5]
-            # prec_3_y_1 = prec_3_y_final[assign_p3 > 0.5]
-            # prec_3_x_2 = prec_3_x_final[assign_p3 <= 0.5]
-            # prec_3_y_2 = prec_3_y_final[assign_p3 <= 0.5]
+            assign_p3 = runif(n = length(prec_3_x_final))
+            prec_3_x_1 = prec_3_x_final[assign_p3 > 0.5]
+            prec_3_y_1 = prec_3_y_final[assign_p3 > 0.5]
+            prec_3_x_2 = prec_3_x_final[assign_p3 <= 0.5]
+            prec_3_y_2 = prec_3_y_final[assign_p3 <= 0.5]
             
-            # prec_1_x = c(prec_1_x, prec_3_x_1)
-            # prec_1_y = c(prec_1_y, prec_3_y_1)
-            # prec_2_x = c(prec_2_x, prec_3_x_2)
-            # prec_2_y = c(prec_2_y, prec_3_y_2)
+            prec_1_x = c(prec_1_x, prec_3_x_1)
+            prec_1_y = c(prec_1_y, prec_3_y_1)
+            prec_2_x = c(prec_2_x, prec_3_x_2)
+            prec_2_y = c(prec_2_y, prec_3_y_2)
             
             # plot(streetLengthInfo_null[[i]][[j]]$buffer)
             # points(prec_1_x, prec_1_y)
@@ -208,7 +208,7 @@ for (index in 1:8) {
                 
                 intensity_diff = abs(int_line_1 - int_line_2)
 
-                int_surf_vals = c(int_surf_vals, int_line_1, int_line_2, intensity_diff)
+                int_surf_vals = c(int_surf_vals, intensity_diff)
             }
             
             nullStr_point_data$DATA[rowNum,] = c(k, i, j,
@@ -229,5 +229,7 @@ for (index in 1:8) {
     save(nullStr_point_data, file=paste0("../Output/nullGridInfo/nullData", 
           index, "_", k,".dat", sep=''))
 
+    rm(longStrBroke)
+    rm(streetLengthInfo_null)
   # }
 }

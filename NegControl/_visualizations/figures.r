@@ -26,7 +26,7 @@ buff_val = 3:10
 # dev.off()
 
 # Figure of Naive P-val  -------------------------------------------------------
-load('../Output_tree/origGridInfo/sim_orig_5.dat')
+load('../Output_tree/origGridInfo/sim_orig_3.dat')
 sim_orig$DATA$naive_pval[sim_orig$DATA$naive_pval == -1] = NA
 
 unadjPVal200 = data.frame("p" = na.omit(sim_orig$DATA$naive_pval))
@@ -38,10 +38,10 @@ negControl_pval = ggplot(unadjPVal200, aes(x=p)) +
                           theme(text = element_text(size=8))
 ggsave(filename = "Plots/negControl_pval.png", plot = negControl_pval, width = 1000, height = 800, units = "px")
 
-load('../Output_tree/origGridInfo/sim_orig_3.dat')
+load('../Output_tree/origGridInfo/sim_orig_1.dat')
 sim_orig$DATA$naive_pval[sim_orig$DATA$naive_pval == -1] = NA
 unadjPValTotal = data.frame(na.omit(sim_orig$DATA$naive_pval))
-for (i in 1:length(buff_val)) {
+for (i in 2:length(buff_val)) {
   load(paste0('../Output_tree/origGridInfo/sim_orig_', i, '.dat'))
   sim_orig$DATA$naive_pval[sim_orig$DATA$naive_pval == -1] = NA
   unadjPValTotal = cbind(unadjPValTotal, data.frame(na.omit(sim_orig$DATA$naive_pval)))
@@ -85,7 +85,7 @@ ggsave(filename = "Plots/trees_numMatch.png", plot = trees_numMatch, width = 100
 
 # Figure of Individual results -----------------------------------------------------
 perc_rejections_new = data.frame("orig" = c(1:length(buff_val)), 
-                                 "buffer" = c(1:length(buff_val)))
+                                 "adjusted" = c(1:length(buff_val)))
 load("../Output_tree/p_vals_match_rel/p_val_df_FINAL.dat")
 for (i in 1:length(buff_val)) {
   load(paste0('../Output_tree/origGridInfo/sim_orig_', i, '.dat'))

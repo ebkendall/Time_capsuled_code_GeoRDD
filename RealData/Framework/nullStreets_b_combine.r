@@ -1,27 +1,34 @@
-for (k in 1:12) {
+for (k in 1:8) {
 
     load(paste0("../Output/nullGridInfo/nullData", k, "_1.dat"))
-    nullStr_point_data$DATA = nullStr_point_data$DATA[nullStr_point_data$DATA$precinct != -1, ]
-    nullStr_point_data$ARR_IND_1 = nullStr_point_data$ARR_IND_1[!do.call(cbind, lapply(nullStr_point_data$ARR_IND_1, is.null))]
-    nullStr_point_data$ARR_IND_2 = nullStr_point_data$ARR_IND_2[!do.call(cbind, lapply(nullStr_point_data$ARR_IND_2, is.null))]
-    nullStr_point_data$OFF_IND_1 = nullStr_point_data$OFF_IND_1[!do.call(cbind, lapply(nullStr_point_data$OFF_IND_1, is.null))]
-    nullStr_point_data$OFF_IND_2 = nullStr_point_data$OFF_IND_2[!do.call(cbind, lapply(nullStr_point_data$OFF_IND_2, is.null))]
+    neg_index = (nullStr_point_data$DATA$precinct != -1)
+    nullStr_point_data$DATA = nullStr_point_data$DATA[neg_index, ]
+    nullStr_point_data$INT_SURFACE = nullStr_point_data$INT_SURFACE[neg_index, ]
+    # nullStr_point_data$ARR_IND_1 = nullStr_point_data$ARR_IND_1[!do.call(cbind, lapply(nullStr_point_data$ARR_IND_1, is.null))]
+    # nullStr_point_data$ARR_IND_2 = nullStr_point_data$ARR_IND_2[!do.call(cbind, lapply(nullStr_point_data$ARR_IND_2, is.null))]
+    # nullStr_point_data$OFF_IND_1 = nullStr_point_data$OFF_IND_1[!do.call(cbind, lapply(nullStr_point_data$OFF_IND_1, is.null))]
+    # nullStr_point_data$OFF_IND_2 = nullStr_point_data$OFF_IND_2[!do.call(cbind, lapply(nullStr_point_data$OFF_IND_2, is.null))]
     combinedMatchingSetup <- nullStr_point_data
 
     for(i in 2:77) {
-      print(paste0(k, "_", i))
-      load(paste0("../Output/nullGridInfo/nullData", k, "_", i,".dat"))
-      nullStr_point_data$DATA = nullStr_point_data$DATA[nullStr_point_data$DATA$precinct != -1, ]
-      nullStr_point_data$ARR_IND_1 = nullStr_point_data$ARR_IND_1[!do.call(cbind, lapply(nullStr_point_data$ARR_IND_1, is.null))]
-      nullStr_point_data$ARR_IND_2 = nullStr_point_data$ARR_IND_2[!do.call(cbind, lapply(nullStr_point_data$ARR_IND_2, is.null))]
-      nullStr_point_data$OFF_IND_1 = nullStr_point_data$OFF_IND_1[!do.call(cbind, lapply(nullStr_point_data$OFF_IND_1, is.null))]
-      nullStr_point_data$OFF_IND_2 = nullStr_point_data$OFF_IND_2[!do.call(cbind, lapply(nullStr_point_data$OFF_IND_2, is.null))]
-      
-      combinedMatchingSetup$DATA = rbind(combinedMatchingSetup$DATA, nullStr_point_data$DATA)
-      combinedMatchingSetup$ARR_IND_1 = append(combinedMatchingSetup$ARR_IND_1, nullStr_point_data$ARR_IND_1)
-      combinedMatchingSetup$ARR_IND_2 = append(combinedMatchingSetup$ARR_IND_2, nullStr_point_data$ARR_IND_2)
-      combinedMatchingSetup$OFF_IND_1 = append(combinedMatchingSetup$OFF_IND_1, nullStr_point_data$OFF_IND_1)
-      combinedMatchingSetup$OFF_IND_2 = append(combinedMatchingSetup$OFF_IND_2, nullStr_point_data$OFF_IND_2)
+        print(paste0(k, "_", i))
+        load(paste0("../Output/nullGridInfo/nullData", k, "_", i,".dat"))
+
+        neg_index = (nullStr_point_data$DATA$precinct != -1)
+        nullStr_point_data$DATA = nullStr_point_data$DATA[neg_index, ]
+        nullStr_point_data$INT_SURFACE = nullStr_point_data$INT_SURFACE[neg_index, ]
+
+        # nullStr_point_data$ARR_IND_1 = nullStr_point_data$ARR_IND_1[!do.call(cbind, lapply(nullStr_point_data$ARR_IND_1, is.null))]
+        # nullStr_point_data$ARR_IND_2 = nullStr_point_data$ARR_IND_2[!do.call(cbind, lapply(nullStr_point_data$ARR_IND_2, is.null))]
+        # nullStr_point_data$OFF_IND_1 = nullStr_point_data$OFF_IND_1[!do.call(cbind, lapply(nullStr_point_data$OFF_IND_1, is.null))]
+        # nullStr_point_data$OFF_IND_2 = nullStr_point_data$OFF_IND_2[!do.call(cbind, lapply(nullStr_point_data$OFF_IND_2, is.null))]
+        
+        combinedMatchingSetup$DATA = rbind(combinedMatchingSetup$DATA, nullStr_point_data$DATA)
+        combinedMatchingSetup$INT_SURFACE = rbind(combinedMatchingSetup$INT_SURFACE, nullStr_point_data$INT_SURFACE)
+        # combinedMatchingSetup$ARR_IND_1 = append(combinedMatchingSetup$ARR_IND_1, nullStr_point_data$ARR_IND_1)
+        # combinedMatchingSetup$ARR_IND_2 = append(combinedMatchingSetup$ARR_IND_2, nullStr_point_data$ARR_IND_2)
+        # combinedMatchingSetup$OFF_IND_1 = append(combinedMatchingSetup$OFF_IND_1, nullStr_point_data$OFF_IND_1)
+        # combinedMatchingSetup$OFF_IND_2 = append(combinedMatchingSetup$OFF_IND_2, nullStr_point_data$OFF_IND_2)
     }
 
     # Filter out the streets that do not have any streets because those are not relevant
@@ -30,10 +37,11 @@ for (k in 1:12) {
     streetInd = (street1Ind & street2Ind)
     
     combinedMatchingSetup$DATA = combinedMatchingSetup$DATA[streetInd, ]
-    combinedMatchingSetup$ARR_IND_1 = combinedMatchingSetup$ARR_IND_1[streetInd]
-    combinedMatchingSetup$ARR_IND_2 = combinedMatchingSetup$ARR_IND_2[streetInd]
-    combinedMatchingSetup$OFF_IND_1 = combinedMatchingSetup$OFF_IND_1[streetInd]
-    combinedMatchingSetup$OFF_IND_2 = combinedMatchingSetup$OFF_IND_2[streetInd]
+    combinedMatchingSetup$INT_SURFACE = combinedMatchingSetup$INT_SURFACE[streetInd, ]
+    # combinedMatchingSetup$ARR_IND_1 = combinedMatchingSetup$ARR_IND_1[streetInd]
+    # combinedMatchingSetup$ARR_IND_2 = combinedMatchingSetup$ARR_IND_2[streetInd]
+    # combinedMatchingSetup$OFF_IND_1 = combinedMatchingSetup$OFF_IND_1[streetInd]
+    # combinedMatchingSetup$OFF_IND_2 = combinedMatchingSetup$OFF_IND_2[streetInd]
     
     combinedMatchingSetupFix = combinedMatchingSetup
 
