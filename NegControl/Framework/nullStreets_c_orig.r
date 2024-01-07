@@ -134,35 +134,6 @@ adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
         prec_2_y = treesByPrec[[prec_ind_2]][,2]
 
         # Random assignment of center points ----------------------------------
-        # poly3 = gBuffer(border_line_1_2, width=buff_ind * 100)
-        # p3_1 = point.in.polygon(prec_1_x, prec_1_y,
-        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
-        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
-        # p3_2 = point.in.polygon(prec_2_x, prec_2_y,
-        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
-        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
-        # 
-        # p3_in_1_x = prec_1_x[(p3_1 > 0) & (p1 == 0)]
-        # p3_in_1_y = prec_1_y[(p3_1 > 0) & (p1 == 0)]
-        # p3_in_2_x = prec_2_x[(p3_2 > 0) & (p2 == 0)]
-        # p3_in_2_y = prec_2_y[(p3_2 > 0) & (p2 == 0)]
-        # 
-        # prec_3_x_final = c(p3_in_1_x, p3_in_2_x)
-        # prec_3_y_final = c(p3_in_1_y, p3_in_2_y)
-        # 
-        # assign_p3 = runif(n = length(prec_3_x_final))
-        # prec_3_x_1 = prec_3_x_final[assign_p3 > 0.5]
-        # prec_3_y_1 = prec_3_y_final[assign_p3 > 0.5]
-        # prec_3_x_2 = prec_3_x_final[assign_p3 <= 0.5]
-        # prec_3_y_2 = prec_3_y_final[assign_p3 <= 0.5]
-        # 
-        # prec_1_x = c(prec_1_x, prec_3_x_1)
-        # prec_1_y = c(prec_1_y, prec_3_y_1)
-        # prec_2_x = c(prec_2_x, prec_3_x_2)
-        # prec_2_y = c(prec_2_y, prec_3_y_2)
-        # ---------------------------------------------------------------------
-
-        # Removing center points -----------------------------------------------
         poly3 = gBuffer(border_line_1_2, width=buff_ind * 100)
         p3_1 = point.in.polygon(prec_1_x, prec_1_y,
                                 poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
@@ -170,11 +141,40 @@ adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
         p3_2 = point.in.polygon(prec_2_x, prec_2_y,
                                 poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
                                 poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
+        
+        p3_in_1_x = prec_1_x[(p3_1 > 0) & (p1 == 0)]
+        p3_in_1_y = prec_1_y[(p3_1 > 0) & (p1 == 0)]
+        p3_in_2_x = prec_2_x[(p3_2 > 0) & (p2 == 0)]
+        p3_in_2_y = prec_2_y[(p3_2 > 0) & (p2 == 0)]
+        
+        prec_3_x_final = c(p3_in_1_x, p3_in_2_x)
+        prec_3_y_final = c(p3_in_1_y, p3_in_2_y)
+        
+        assign_p3 = runif(n = length(prec_3_x_final))
+        prec_3_x_1 = prec_3_x_final[assign_p3 > 0.5]
+        prec_3_y_1 = prec_3_y_final[assign_p3 > 0.5]
+        prec_3_x_2 = prec_3_x_final[assign_p3 <= 0.5]
+        prec_3_y_2 = prec_3_y_final[assign_p3 <= 0.5]
+        
+        prec_1_x = c(prec_1_x, prec_3_x_1)
+        prec_1_y = c(prec_1_y, prec_3_y_1)
+        prec_2_x = c(prec_2_x, prec_3_x_2)
+        prec_2_y = c(prec_2_y, prec_3_y_2)
+        # ---------------------------------------------------------------------
 
-        prec_1_x = prec_1_x[(p3_1 == 0) | (p3_1 > 0 & p1 > 0)]
-        prec_1_y = prec_1_y[(p3_1 == 0) | (p3_1 > 0 & p1 > 0)]
-        prec_2_x = prec_2_x[(p3_2 == 0) | (p3_2 > 0 & p2 > 0)]
-        prec_2_y = prec_2_y[(p3_2 == 0) | (p3_2 > 0 & p2 > 0)]
+        # Removing center points -----------------------------------------------
+        # poly3 = gBuffer(border_line_1_2, width=buff_ind * 100)
+        # p3_1 = point.in.polygon(prec_1_x, prec_1_y,
+        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
+        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
+        # p3_2 = point.in.polygon(prec_2_x, prec_2_y,
+        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,1],
+        #                         poly3@polygons[[1]]@Polygons[[1]]@coords[,2])
+
+        # prec_1_x = prec_1_x[(p3_1 == 0) | (p3_1 > 0 & p1 > 0)]
+        # prec_1_y = prec_1_y[(p3_1 == 0) | (p3_1 > 0 & p1 > 0)]
+        # prec_2_x = prec_2_x[(p3_2 == 0) | (p3_2 > 0 & p2 > 0)]
+        # prec_2_y = prec_2_y[(p3_2 == 0) | (p3_2 > 0 & p2 > 0)]
         # ---------------------------------------------------------------------
 
         # Focus on points only in the box

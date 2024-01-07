@@ -26,7 +26,8 @@ buff_val = 3:10
 # dev.off()
 
 # Figure of Naive P-val  -------------------------------------------------------
-load('../Output_tree/origGridInfo/sim_orig_3.dat')
+ind_num = 2
+load(paste0('../Output_tree/origGridInfo/sim_orig_', ind_num, '.dat'))
 sim_orig$DATA$naive_pval[sim_orig$DATA$naive_pval == -1] = NA
 
 unadjPVal200 = data.frame("p" = na.omit(sim_orig$DATA$naive_pval))
@@ -34,7 +35,7 @@ negControl_pval = ggplot(unadjPVal200, aes(x=p)) +
                           geom_histogram(color="black", fill="white", bins = floor(sqrt(nrow(sim_orig$DATA)))) +
                           xlab("P-Values") + 
                           ylab("Frequency") + 
-                          ggtitle("Histogram of p-values at buffer width 500 ft") + 
+                          ggtitle(paste0("Histogram of p-values at buffer width ", ind_num + 2, "00 ft")) + 
                           theme(text = element_text(size=8))
 ggsave(filename = "Plots/negControl_pval.png", plot = negControl_pval, width = 1000, height = 800, units = "px")
 
@@ -67,7 +68,7 @@ ggsave(filename = "Plots/negControl_pval_total.png", plot = negControl_pval_tota
 print(percRejection)
 
 # Number of matches changing -----------------------------------------------------
-j = 3
+j = 6
 load(paste0('../Output_tree/combination/perc_pval_match_street', j, '.dat'))
 pval = perc_pval_match[1:60,]
 trees_numMatch = ggplot(pval, aes( y=perc_pval_less_05, x=num_match)) + 
@@ -142,12 +143,12 @@ grid.arrange(p[[7]], p[[8]], ncol = 1, nrow = 2)
 # grid.arrange(p[[11]], p[[12]], ncol = 1, nrow = 2)
 dev.off()
 
-adjPVal500 = data.frame("p" = na.omit(p_val_df[[3]][1,]))
+adjPVal500 = data.frame("p" = na.omit(p_val_df[[ind_num]][1,]))
 trees_500_adj = ggplot(adjPVal500, aes(x=p)) + 
                         geom_histogram(color="black", fill="white", bins = sqrt(144)) +
                         xlab("P-Values") + 
                         ylab("Frequency") + 
-                        ggtitle(paste0("Corrected p-values at buffer ",5,"00 ft")) + 
+                        ggtitle(paste0("Corrected p-values at buffer ",ind_num+2,"00 ft")) + 
                         theme(text = element_text(size=8))
 ggsave(filename = "Plots/trees_500_adj.png", plot = trees_500_adj, width = 1000, height = 800, units = "px")
 
@@ -185,6 +186,6 @@ grid.arrange(i_p[[1]], i_p[[2]], i_p[[3]], i_p[[4]], ncol = 2, nrow = 2)
 grid.arrange(i_p[[5]], i_p[[6]], i_p[[7]], i_p[[8]], ncol = 2, nrow = 2)
 dev.off()
 
-
+ggsave(filename = "Plots/int_surface_single.png", plot = i_p[[ind_num]], width = 1000, height = 800, units = "px")
 
 
