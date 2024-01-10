@@ -1,4 +1,4 @@
-for (k in 3:10) {
+for (k in 1:8) {
 
     load(paste0("../Output_noWater/nullGridInfo/nullData", k, "_1.dat"))
     nullStr_point_data$DATA = nullStr_point_data$DATA[nullStr_point_data$DATA$precinct != -1, ]
