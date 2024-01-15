@@ -11,7 +11,6 @@ load('../Data/dataArr_sub.rda') # dataArr_sub
 load('../Data/dataOff_sub.rda') # dataOff_sub
 Dir = '../Output/origGridInfo/'
 
-# adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
 adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
 
 # for (k in 1:length(adjust_val)) {

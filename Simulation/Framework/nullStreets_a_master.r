@@ -1,7 +1,5 @@
 # Iterate through each buffer width
 
-adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
-
 for (index in 1:8) {
 
     buff_ind = index + 2
