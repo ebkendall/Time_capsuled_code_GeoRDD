@@ -80,7 +80,7 @@ for (trialNum in 1:1000) {
             
             t_stat_list = test_stats_orig(gridPointValues, sim_orig)
             
-            t_stat = max(t_stat_list[,1], na.rm = T)
+            t_stat = mean(t_stat_list[,1], na.rm = T)
             w_max = which.max(na.omit(t_stat_list[,1]))
             
             whichMaxInfo[[s_name]][[k]] = rbind(whichMaxInfo[[s_name]][[k]], 
@@ -103,7 +103,6 @@ par(mfrow=c(2,2))
 for (i in 1:8) {
     pval_save = rep(0, 4)
     for(k in 1:4) {
-        print(paste0(i, " ", k))
         pval = p_val_df[[i]][,k]
         hist(pval, breaks = sqrt(length(pval)), main = paste0(display_name[k], ": pVal for B", i*100),
              xlab = paste0("Perc. < 0.05 is ",  round(mean(pval < 0.05, na.rm=TRUE), 4)),

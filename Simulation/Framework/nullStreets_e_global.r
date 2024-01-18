@@ -163,7 +163,7 @@ load("../../NegControl/Output_tree/combination/match_count_list.dat")
                     temp_max[myInd] = global_null[[k]][ii, rand_ind]
                     myInd = myInd + 1
                 }
-                global_t_stat[[k]][rep, 1] = max(temp_max, na.rm = T)
+                global_t_stat[[k]][rep, 1] = mean(temp_max, na.rm = T)
                 global_t_stat[[k]][rep, 2] = temp_loc[which.max(temp_max)]
             }
 
