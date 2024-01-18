@@ -139,7 +139,7 @@ for(k in 1:length(buff_val)) {
             temp_max[myInd] = global_null[[k]][ii, rand_ind]
             myInd = myInd + 1
         }
-        global_t_stat[[k]][rep, 1] = max(temp_max, na.rm = T)
+        global_t_stat[[k]][rep, 1] = mean(temp_max, na.rm = T)
         global_t_stat[[k]][rep, 2] = temp_loc[which.max(temp_max)]
     }
     
@@ -157,7 +157,7 @@ for(k in 1:length(buff_val)) {
                 temp_max[myInd] = global_null_int_surf[[k]][[av]][ii, rand_ind]
                 myInd = myInd + 1
             }
-            global_t_stat_int_surf[[k]][[av]][rep, 1] = max(temp_max, na.rm = T)
+            global_t_stat_int_surf[[k]][[av]][rep, 1] = mean(temp_max, na.rm = T)
             global_t_stat_int_surf[[k]][[av]][rep, 2] = temp_loc[which.max(temp_max)]
         }
     }

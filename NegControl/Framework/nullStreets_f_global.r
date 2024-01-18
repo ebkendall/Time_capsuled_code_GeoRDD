@@ -94,7 +94,7 @@ for(k in 3:10) {
             temp_max[myInd] = global_null[[k]][ii, rand_ind]
             myInd = myInd + 1
         }
-        global_t_stat[[k]][rep, 1] = max(temp_max, na.rm = T)
+        global_t_stat[[k]][rep, 1] = mean(temp_max, na.rm = T)
         global_t_stat[[k]][rep, 2] = temp_loc[which.max(temp_max)]
     }
 
@@ -112,7 +112,7 @@ for(k in 3:10) {
   t_stat_streets_orig = abs(sim_orig$DATA$count1 / sim_orig$DATA$streets1
                             - sim_orig$DATA$count2 / sim_orig$DATA$streets2)
   
-  t_stat = max(t_stat_streets_orig, na.rm = T)
+  t_stat = mean(t_stat_streets_orig, na.rm = T)
 
   p_val_df[k] = mean(global_t_stat[[k]]$max_t_stat > t_stat)
 }

@@ -46,10 +46,10 @@ test_stats <- function(gridPointValues, combinedMatchingSetupFix, w50) {
 
 save_type = c("HotSpot/", "Uniform/", "Random/", "Correlated/")
 
-match_count <- c(160, 880, 480, 160, 1020, 140, 140, 300)
+load("../../NegControl/Output_tree/combination/match_count_list.dat")
 
-for(trialNum in 1:1000) {
-    
+# for(trialNum in 1:1000) {
+    trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
     set.seed(trialNum)
 
     `%notin%` <- Negate(`%in%`)
@@ -74,10 +74,11 @@ for(trialNum in 1:1000) {
         else if (s_name == 4) {gridPointValues = gridPointValues_cov_c_big}
         else {print("Incorrect input to start")}
 
-        for (k in 3:10) {
+        for (k in 1:8) {
             # We need a global test for each buffer width
             print(paste0(s_name, " ", k))
-            n_matches = match_count[k-2]
+            match_vec = match_count_list[[k]]
+            n_matches = match_vec[[1]]
             print(paste0("Match Num: ", n_matches))
 
             load(paste0("../Output_noWater/nullGridInfo/combinedMatchingSetup", k, ".dat"))
@@ -141,10 +142,11 @@ for(trialNum in 1:1000) {
         load(paste0("../Output_noWater/sim_results/Global/", save_type[s_name], "global_null_", trialNum, ".dat"))
         global_t_stat <- vector(mode = "list", length = 10)
 
-        for(k in 3:10) {
+        for(k in 1:8) {
 
             print(k)
-            n_matches = match_count[k-2]
+            match_vec = match_count_list[[k]]
+            n_matches = match_vec[[1]]
             print(paste0("Match Num: ", n_matches))
 
             global_t_stat[[k]] = data.frame("max_t_stat" = rep(NA, n_matches),
@@ -171,6 +173,6 @@ for(trialNum in 1:1000) {
                                         "global_t_stat_", trialNum, ".dat"))
     }
 
-}
+# }
 
 

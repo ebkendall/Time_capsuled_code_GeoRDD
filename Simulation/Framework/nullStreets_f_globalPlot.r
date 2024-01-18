@@ -40,9 +40,9 @@ test_stats_orig <- function(gridPointValues, sim_orig) {
 save_type = c("HotSpot/", "Uniform/", "Random/", "Correlated/") 
 
 # Step 3 -----------------------------------------------------------------------
-p_val_df = vector(mode = "list", length = 10)
+p_val_df = vector(mode = "list", length = 8)
 
-for(i in 3:10) {p_val_df[[i]] = data.frame("HotSpot"     = rep(NA,1000),
+for(i in 1:8) {p_val_df[[i]] = data.frame( "HotSpot"     = rep(NA,1000),
                                            "Uniform"     = rep(NA,1000),
                                            "Random"      = rep(NA,1000),
                                            "Correlated"  = rep(NA,1000))}
@@ -74,7 +74,7 @@ for (trialNum in 1:1000) {
         else if (s_name == 4) {gridPointValues = gridPointValues_cov_c_big}
         else {print("Incorrect input to start")}
         
-        for(k in 3:10) {
+        for(k in 1:8) {
             
             load(paste0('../Output_noWater/origGridInfo/sim_orig_', k,".dat"))
             
@@ -93,39 +93,45 @@ for (trialNum in 1:1000) {
     }
 }
 
-save(p_val_df, file = paste0("../Output_noWater/Plots/global_p_values.rda"))
+save(p_val_df, file = paste0("../Output_noWater/global_p_values.rda"))
 
 display_name = c("Precinct", "Constant", "Random", "Spatial")
 
+print("Global Results")
 pdf(paste0("../_visualizations/Plots/global_new_total.pdf"))
 par(mfrow=c(2,2))
-for (i in 3:10) {
+for (i in 1:8) {
+    pval_save = rep(0, 4)
     for(k in 1:4) {
         print(paste0(i, " ", k))
         pval = p_val_df[[i]][,k]
         hist(pval, breaks = sqrt(length(pval)), main = paste0(display_name[k], ": pVal for B", i*100),
              xlab = paste0("Perc. < 0.05 is ",  round(mean(pval < 0.05, na.rm=TRUE), 4)),
              xlim=c(0,1))
+        pval_save[k] = round(mean(pval < 0.05, na.rm=TRUE), 4)
     }
+    print(paste0((i+2)*100, " & ", pval_save[2], " & ", pval_save[3], " & ",
+                                   pval_save[4], " & ", pval_save[1]))
 }
 
-for (i in 3:10) {
+for (i in 1:8) {
     for(k in 1:4) {
         plot(table(indexList_MAIN[whichMaxInfo[[k]][[i]][,1]]), 
              ylab = "Freq", main = paste0("Max Obs TStat index: ", 
                                           names(which.max(table(indexList_MAIN[whichMaxInfo[[k]][[i]][,1]]))),
-                                          "\n B:", i*100))
+                                          "\n B:", (i+2)*100))
     }
 }
 dev.off()
 
 # Individual plot
+print("Individual Results")
 
 load("../Output_noWater/sim_results/p_vals_match_rel/p_val_df_1.dat")
 final_hist = p_val_df
 
 for(j in 1:4) {
-  for (k in 3:10) {
+  for (k in 1:8) {
     final_hist[[j]][[k]] = final_hist[[j]][[k]][1,]
   }
 }
@@ -133,7 +139,7 @@ for(j in 1:4) {
 for (i in c(2:1000)) {
     load(paste0("../Output_noWater/sim_results/p_vals_match_rel/p_val_df_", i, ".dat"))
     for(j in 1:4) {
-        for(k in 3:10) {
+        for(k in 1:8) {
             final_hist[[j]][[k]] = c(final_hist[[j]][[k]], p_val_df[[j]][[k]][1,])
         }
     }
@@ -144,12 +150,16 @@ display_name = c("Precinct", "Constant", "Random", "Spatial")
 
 pdf("../_visualizations/Plots/indiv_new_adj.pdf")
 par(mfrow=c(2,2))
-for (i in 3:10) {
-  for(k in 1:4) {
-    pval = final_hist[[k]][[i]]
-    hist(pval, main = paste0(display_name[k], ": pVal for B", i*100),
-         xlab = paste0("Perc. < 0.05 is ",  round(mean(pval < 0.05, na.rm=TRUE), 4)),
-         xlim=c(0,1))
-  }
+for (i in 1:8) {
+    pval_save = rep(0, 4)
+    for(k in 1:4) {
+        pval = final_hist[[k]][[i]]
+        hist(pval, main = paste0(display_name[k], ": pVal for B", (i+2)*100),
+            xlab = paste0("Perc. < 0.05 is ",  round(mean(pval < 0.05, na.rm=TRUE), 4)),
+            xlim=c(0,1))
+        pval_save[k] = round(mean(pval < 0.05, na.rm=TRUE), 4)
+    }
+    print(paste0((i+2)*100, " & ", pval_save[2], " & ", pval_save[3], " & ",
+                                   pval_save[4], " & ", pval_save[1]))
 }
 dev.off()
