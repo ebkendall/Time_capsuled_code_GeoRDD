@@ -428,6 +428,7 @@ wRatioOk = which(combinedMatchingSetupFix$DATA$ratioArea > wMin_a &
                      combinedMatchingSetupFix$DATA$ratioStreet < wMax_s)
 
 combinedMatchingSetupFix2 = combinedMatchingSetupFix$DATA[wRatioOk,]
+int_surface_info = combinedMatchingSetupFix$INT_SURFACE[wRatioOk,]
 
 # Wherever there is a 0 for the offense count, everything gets scaled by 1
 which_zeros = which(combinedMatchingSetupFix2$n_off_1 == 0 | combinedMatchingSetupFix2$n_off_2 == 0)
@@ -445,45 +446,268 @@ sim_orig$DATA$n_off_2_prec[which_zeros_orig] = sim_orig$DATA$n_off_2_prec[which_
 rat_off = combinedMatchingSetupFix2$n_off_1 / combinedMatchingSetupFix2$n_off_2
 rat_off[rat_off < 1] = 1 / rat_off[rat_off < 1]
 tot_off = combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2
-t_stat_new = abs(combinedMatchingSetupFix2$n_arr_1 / combinedMatchingSetupFix2$n_off_1
-                 - combinedMatchingSetupFix2$n_arr_2 / combinedMatchingSetupFix2$n_off_2)
 
-plotting_info = data.frame("t_stat_new" = t_stat_new, "totLength" = tot_off, "ratioOff" = rat_off)
-plotting_info = plotting_info[!is.na(plotting_info$totLength), ]
+# Split this up via the spatial adjustment
+t_stat_plot_list = vector(mode = 'list', length = length(adjust_val))
+var_stat_plot_list = vector(mode = 'list', length = length(adjust_val))
 
 ratio_breaks = seq(0, 60, 6)
 sum_breaks   = seq(1200, 0, -60)
-t_stat_plot = matrix(nrow = length(ratio_breaks)-1, ncol = length(sum_breaks)-1)
-var_stat_plot = matrix(nrow = length(ratio_breaks)-1, ncol = length(sum_breaks)-1)
-for(i in 2:length(ratio_breaks)) {
-    sub_rat = plotting_info[plotting_info$ratioOff <= ratio_breaks[i] &
-                                plotting_info$ratioOff > ratio_breaks[i-1], , drop = F]
-    for(j in 2:length(sum_breaks)) {
-        sub_tot = sub_rat[sub_rat$totLength > sum_breaks[j] & sub_rat$totLength <= sum_breaks[j-1], ,drop=F]
-        if(nrow(sub_tot) > 0) {
-            t_stat_plot[i-1, j-1] = mean(sub_tot$t_stat_new, na.rm = T)
-            var_stat_plot[i-1, j-1] = var(sub_tot$t_stat_new, na.rm = T)
-        }
-    }
-}
 c_name = NULL
 r_name = NULL
 for(i in 2:length(ratio_breaks)) r_name = c(r_name, paste0(ratio_breaks[i-1], "-", ratio_breaks[i]))
 for(i in 2:length(sum_breaks)) c_name = c(c_name, paste0(sum_breaks[i], "-", sum_breaks[i-1]))
 
-colnames(t_stat_plot) = c_name
-rownames(t_stat_plot) = r_name
+for(k in 1:length(adjust_val)) {
+    t_stat_new = int_surface_info[,k]
+    
+    plotting_info = data.frame("t_stat_new" = t_stat_new, "totLength" = tot_off, "ratioOff" = rat_off)
+    plotting_info = plotting_info[!is.na(plotting_info$totLength), ]
+    
+    t_stat_plot = matrix(nrow = length(ratio_breaks)-1, ncol = length(sum_breaks)-1)
+    var_stat_plot = matrix(nrow = length(ratio_breaks)-1, ncol = length(sum_breaks)-1)
+    for(i in 2:length(ratio_breaks)) {
+        sub_rat = plotting_info[plotting_info$ratioOff <= ratio_breaks[i] &
+                                    plotting_info$ratioOff > ratio_breaks[i-1], , drop = F]
+        for(j in 2:length(sum_breaks)) {
+            sub_tot = sub_rat[sub_rat$totLength > sum_breaks[j] & sub_rat$totLength <= sum_breaks[j-1], ,drop=F]
+            if(nrow(sub_tot) > 0) {
+                t_stat_plot[i-1, j-1] = mean(sub_tot$t_stat_new, na.rm = T)
+                var_stat_plot[i-1, j-1] = var(sub_tot$t_stat_new, na.rm = T)
+            }
+        }
+    }
+    
+    colnames(t_stat_plot) = c_name
+    rownames(t_stat_plot) = r_name
+    
+    colnames(var_stat_plot) = c_name
+    rownames(var_stat_plot) = r_name
+    
+    t_stat_plot_list[[k]] = t_stat_plot
+    var_stat_plot_list[[k]] = var_stat_plot
+}
 
-colnames(var_stat_plot) = c_name
-rownames(var_stat_plot) = r_name
-
-png(filename = "Plots/appendix_res.png", width = 1000, height = 800,
-    units = "px", pointsize = 12, bg = "white", res = NA)
-heatmap(t_stat_plot, Colv = NA, Rowv = NA, cexRow = 3, cexCol = 3, margins = c(12,2))
+# basic plots
+pdf("Plots/appendix_res_surf_test.pdf")
+for(k in 1:length(adjust_val)){
+    heatmap(t_stat_plot_list[[k]], Colv = NA, Rowv = NA,
+            main = paste0("Smoothing multiplier = ", adjust_val[k]))
+}
 dev.off()
 
-png(filename = "Plots/appendix_res2.png", width = 1000, height = 800,
-    units = "px", pointsize = 12, bg = "white", res = NA)
-heatmap(var_stat_plot, Colv = NA, Rowv = NA, cexRow = 3, cexCol = 3, margins = c(12,2))
+pdf("Plots/appendix_res_surf_2_test.pdf")
+for(k in 1:length(adjust_val)){
+    heatmap(var_stat_plot_list[[k]], Colv = NA, Rowv = NA,
+            main = paste0("Smoothing multiplier = ", adjust_val[k]))
+}
 dev.off()
 
+library(egg)
+
+# Formatting for ggplot
+x <- c_name
+y <- r_name
+t_stat_plot_list_gg = vector(mode = 'list', length = length(adjust_val))
+var_stat_plot_list_gg = vector(mode = 'list', length = length(adjust_val))
+for(k in 1:length(adjust_val)) {
+    data <- expand.grid(X=x, Y=y)
+    data$Z <- c(t(t_stat_plot_list[[k]]))
+    t_stat_plot_list_gg[[k]] = ggplot(data, aes(X, Y, fill= Z)) + 
+                                geom_tile() +
+                                labs(title=paste0("Mean (smoothing multiplier = ", adjust_val[k], ")")) +
+                                scale_fill_gradient(low = "navy", high = "red", na.value="white") +
+                                scale_x_discrete(guide = guide_axis(angle = 90)) +
+                                theme_minimal() +
+                                theme(axis.title.x = element_blank(),
+                                      axis.title.y = element_blank(),
+                                      legend.position = "none",
+                                      plot.title = element_text(size=10)) 
+    
+    data2 <- expand.grid(X=x, Y=y)
+    data2$Z <- c(t(var_stat_plot_list[[k]]))
+    var_stat_plot_list_gg[[k]] = ggplot(data2, aes(X, Y, fill= Z)) + 
+                                    geom_tile() +
+                                    labs(title=paste0("Variance (smoothing multiplier = ", adjust_val[k], ")")) +
+                                    scale_fill_gradient(low = "navy", high = "red", na.value="white") +
+                                    scale_x_discrete(guide = guide_axis(angle = 90)) +
+                                    theme_minimal() +
+                                    theme(axis.title.x = element_blank(),
+                                          axis.title.y = element_blank(),
+                                          legend.position = "none",
+                                          plot.title = element_text(size=10)) 
+}
+
+app1 = ggarrange(t_stat_plot_list_gg[[1]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.title.x = element_blank()), 
+                 t_stat_plot_list_gg[[2]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 t_stat_plot_list_gg[[3]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.title.x = element_blank()),
+                 t_stat_plot_list_gg[[4]] + 
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 t_stat_plot_list_gg[[5]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.title.x = element_blank()),
+                 t_stat_plot_list_gg[[6]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 t_stat_plot_list_gg[[7]],
+                 t_stat_plot_list_gg[[8]] +
+                     theme(axis.text.y = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.y = element_blank()),
+                 nrow = 4, ncol = 2)
+ggsave(filename = "Plots/appendix_res_surf.pdf", plot = app1)
+
+app2 = ggarrange(var_stat_plot_list_gg[[1]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.title.x = element_blank()), 
+                 var_stat_plot_list_gg[[2]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[3]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.title.x = element_blank()),
+                 var_stat_plot_list_gg[[4]] + 
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[5]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.title.x = element_blank()),
+                 var_stat_plot_list_gg[[6]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[7]],
+                 var_stat_plot_list_gg[[8]] +
+                     theme(axis.text.y = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.y = element_blank()),
+                 nrow = 4, ncol = 2)
+ggsave(filename = "Plots/appendix_res_surf_2.pdf", plot = app2)
+
+app3 = ggarrange(t_stat_plot_list_gg[[1]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.title.x = element_blank()), 
+                 t_stat_plot_list_gg[[2]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[1]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()), 
+                 var_stat_plot_list_gg[[2]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 t_stat_plot_list_gg[[3]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.title.x = element_blank()),
+                 t_stat_plot_list_gg[[4]] + 
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[3]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[4]] + 
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 t_stat_plot_list_gg[[5]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.title.x = element_blank()),
+                 t_stat_plot_list_gg[[6]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[5]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[6]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 t_stat_plot_list_gg[[7]],
+                 t_stat_plot_list_gg[[8]] +
+                     theme(axis.text.y = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[7]] +
+                     theme(axis.text.y = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[8]] +
+                     theme(axis.text.y = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.y = element_blank()),
+                 nrow = 4, ncol = 4)
+
+ggsave(filename = "Plots/appendix_res_surf_both.pdf", plot = app3, width=11, height=8.5)

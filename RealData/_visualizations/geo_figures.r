@@ -4,7 +4,7 @@ load('../Data/indexList_MAIN.RData')
 load('../Data/nycSub.RData')
 load('../Data/totalStreetBuffInfo_NEW.RData')
 
-library(rgeos, quietly = T)
+library(rgeos)
 library(ggmap, quietly = T)
 library(tidyverse, quietly = T)
 
@@ -74,7 +74,7 @@ points(arr_choice$x_coord_cd[arr_choice$arrest_precinct == ind_choice[2,2]],
 dev.off()
 
 # Figure 6 (streets) -----------------------------------------------------------
-load('../Data/streetsByPrec.RData')
+load('../../NegControl/Data/streetsByPrec.RData')
 load('../Data/OutputStrInfo_realData/strInfo_5_53.dat')
 
 png(filename = "Plots/precStreetsAndBuff.png", width = 2000, height = 1000,
@@ -82,7 +82,7 @@ png(filename = "Plots/precStreetsAndBuff.png", width = 2000, height = 1000,
 
 areas = NULL
 for(i in 1:length(streetLengthInfo_null)) {
-  if (!is.na(streetLengthInfo_null[[i]][[1]])) {
+  if (sum(is.na(streetLengthInfo_null[[i]][[1]])) == 0) {
     areas = c(areas, streetLengthInfo_null[[i]][[1]]$buffer@polygons[[1]]@area)
   } else {
     areas = c(areas, NA)
