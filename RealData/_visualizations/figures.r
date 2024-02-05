@@ -3,7 +3,6 @@
 library(tidyverse, quietly = T)
 library(gridExtra)
 
-# adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
 adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
 buff_val = 3:10
 
@@ -33,10 +32,12 @@ for (i in 1:length(buff_val)) {
 }
 percRejection$buff = as.factor(percRejection$buff)
 
+print(percRejection)
+
 realData_naive_total = ggplot(percRejection, aes(y=perc, x=buff)) + 
                           geom_bar(position="dodge", stat="identity") + 
                           ggtitle("Percentage of p-values less than 0.05") +
-                          xlab("Buffer Width (100x in ft)") + 
+                          xlab("Buffer width (100x in ft)") + 
                           ylab("Percent") +
                           ylim(0, 1) +
                           # scale_x_continuous(breaks = pretty(percRejection$buff, n = 8)) +
@@ -90,7 +91,7 @@ for(i in 1:length(buff_val)) {
         geom_histogram(color="black", fill="white", bins = sqrt(144)) +
         xlab("P-Values") + 
         ylab("Frequency") + 
-        ggtitle(paste0("Corrected p-values at buffer ",i,"00 ft")) + 
+        ggtitle(paste0("Corrected p-values at buffer ",i+2,"00 ft")) + 
         theme(text = element_text(size=8))
 }
 pdf("Plots/correctedHist.pdf", onefile = T)
@@ -124,8 +125,8 @@ for(b in 1:length(buff_val)) {
     i_p[[b]] = ggplot(myData, aes(y=yVal, x=buff)) +
         geom_bar(position="dodge", stat="identity") +
         labs(title="Percent of p-values less than 0.05 (Arrest Data)",
-             subtitle=paste0("Intensity surface correction, buffer = ", b+2, "00ft"))+
-        xlab("Spatial smoothness adjustment") +
+             subtitle=paste0("Intensity surface correction, region size = ", b+2, "00 ft"))+
+        xlab("Spatial smoothing multiplier") +
         ylab("Percent") +
         ylim(0,1)+
         # scale_x_continuous(breaks=1:length(adjust_val)) +
@@ -200,8 +201,8 @@ for(k in 1:length(buff_val)) {
         g_plots_surf[[k]][[kk]] = ggplot(globalEmpDist, aes(x=num)) +
             geom_histogram(color="black", fill="white", bins = floor(sqrt(nrow(globalEmpDist)))) +
             geom_vline(data=globalObsVal, aes(xintercept=obs, color="red"), size=1) +
-            ggtitle(paste0("Distr. of global test stat. (smoothing multiplier = ", adjust_val[kk], ") (buffer = ", k+2, "00 ft)")) +
-            xlab("Test Statistic") +
+            ggtitle(paste0("Distr. of global test stat. (smoothing mult. = ", adjust_val[kk], ")")) +
+            xlab("Test statistic") +
             ylab("Frequency") +
             theme(legend.position="none", text = element_text(size=6)) +
             theme(plot.margin = unit(c(.2,.2,.2,.2), "mm")) +
@@ -223,7 +224,7 @@ for(k in 1:length(buff_val)) {
     for(kk in 1:length(adjust_val)) {
         hist(global_t_stat_int_surf[[k]][[kk]]$max_t_stat, 
              breaks = floor(sqrt(length(global_t_stat_int_surf[[k]][[kk]]$max_t_stat))),
-             main = paste0("Buffer: ", k+2, ", Adjust: ", adjust_val[kk]),
+             main = paste0("Region size: ", k+2, ", Adjust: ", adjust_val[kk]),
              xlab = paste0('p-value: ', round(p_val_df_int_surf[k, kk], digits = 4)))
         abline(v = mean(t_stat_int_surface_orig[,kk], na.rm = T), lwd = 2, col = 'red')
     }
@@ -234,9 +235,9 @@ globalPvals_new_2_surf = data.frame("adjust" = as.factor(adjust_val),
                                     "p" = p_val_df_int_surf[2,])
 realData_global_total = ggplot(globalPvals_new_2_surf, aes(y=p, x=adjust)) +
     geom_bar(position="dodge", stat="identity") +
-    ggtitle("P-Values for global test (buffer = 400 ft)") +
+    ggtitle("P-Values for global test") +
     xlab("Spatial smoothing multiplier") +
-    ylab("P-Values") +
+    ylab("P-Value") +
     geom_hline(yintercept=0.05, linetype="dashed",
                color = "red", size = 0.5) +
     theme(text = element_text(size=8))
@@ -249,7 +250,7 @@ for(k in 1:length(buff_val)) {
                                         "p" = p_val_df_int_surf[k,])
     gP[[k]] = ggplot(globalPvals_new_2_surf, aes(y=p, x=adjust)) +
         geom_bar(position="dodge", stat="identity") +
-        ggtitle(paste0("P-Values for global test (buffer = ", k+2,"00ft)")) +
+        ggtitle(paste0("P-Values for global test (region size = ", k+2,"00ft)")) +
         xlab("Spatial smoothing adjustment factor") +
         ylab("P-Values") +
         geom_hline(yintercept=0.05, linetype="dashed",
@@ -258,11 +259,13 @@ for(k in 1:length(buff_val)) {
 }
 
 pdf("Plots/global_pvals_surf.pdf", onefile = T)
-grid.arrange(gP[[1]], gP[[2]], gP[[3]], gP[[4]], ncol = 2, nrow = 2)
-grid.arrange(gP[[5]], gP[[6]], gP[[7]], gP[[8]], ncol = 2, nrow = 2)
+grid.arrange(gP[[1]], gP[[2]], ncol = 1, nrow = 2)
+grid.arrange(gP[[3]], gP[[4]], ncol = 1, nrow = 2)
+grid.arrange(gP[[5]], gP[[6]], ncol = 1, nrow = 2)
+grid.arrange(gP[[7]], gP[[8]], ncol = 1, nrow = 2)
 dev.off()
 
-print("Global p-values for each buffer width and spatial smoothness")
+print("Global p-values for each region size and spatial smoothness")
 colnames(p_val_df_int_surf) = NULL
 rownames(p_val_df_int_surf) = NULL
 print(round(t(p_val_df_int_surf), digits = 3))
@@ -711,3 +714,23 @@ app3 = ggarrange(t_stat_plot_list_gg[[1]] +
                  nrow = 4, ncol = 4)
 
 ggsave(filename = "Plots/appendix_res_surf_both.pdf", plot = app3, width=11, height=8.5)
+
+
+# Updated p-value histograms
+load('../Output/p_vals_match_rel/int_surface_pval_vec.dat')
+for(k in 1:length(buff_val)) {
+    p = vector(mode = 'list', length = length(buff_val))
+    for(i in 1:length(adjust_val)) {
+        adjPVal500 = data.frame("p" = na.omit(int_surface_pval_vec[[k]][,i]))
+        p[[i]] = ggplot(adjPVal500, aes(x=p)) + 
+                        geom_histogram(color="black", fill="white", bins = sqrt(144)) +
+                        xlab("P-Values") + 
+                        ylab("Frequency") + 
+                        labs(title = paste0("Corrected p-values, smoothing multiplier = ",adjust_val[i]),
+                             subtitle = paste0("region size = ", k + 2, "00 ft")) +
+                        theme(text = element_text(size=8))
+    }
+    pdf(paste0("Plots/correctedHist_surf_real", k,".pdf"), onefile = T)
+    grid.arrange(p[[1]], p[[2]],p[[3]], p[[4]], p[[5]], p[[6]], p[[7]], p[[8]], ncol = 2, nrow = 4)
+    dev.off()
+}

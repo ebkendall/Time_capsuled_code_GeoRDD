@@ -1,5 +1,4 @@
 load('../Data/treesByPrec.RData')
-# load('../Data/tree_df.RData')
 load('../Data/ind_prec_df.rda')
 load('../Data/indexList_MAIN.RData')
 load('../Data/nycSub.RData')
@@ -10,20 +9,8 @@ load('../Data/totalStreetBuffInfo_NEW.RData')
 library(tidyverse, quietly = T)
 library(gridExtra, quietly = T)
 
-# adjust_val = c(0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 4, 6, 10)
 adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
 buff_val = 3:10
-
-# Figure Trees on Streets ------------------------------------------------------
-# prec_num = 49
-
-# tree_sub = tree_df[which((tree_df$x_sp %in% treesByPrec[[prec_num]]$x) & (tree_df$y_sp %in% treesByPrec[[prec_num]]$y)), ]
-
-# png(filename = "Plots/treesAndStreets.png", width = 2000, height = 1000,
-#     units = "px", pointsize = 12, bg = "white", res = NA)
-# qmplot(longitude, latitude, data = tree_sub, alpha = I(.9), size = 1, colour = 'darkred', darken = .1, source = "osm") +
-#   theme(legend.position = "none")
-# dev.off()
 
 # Figure of Naive P-val  -------------------------------------------------------
 ind_num = 2
@@ -59,7 +46,7 @@ percRejection$buff = as.factor(percRejection$buff)
 negControl_pval_total = ggplot(percRejection, aes(y=perc, x=buff)) + 
                               geom_bar(position="dodge", stat="identity") + 
                               ggtitle("Percentage of p-values less than 0.05") +
-                              xlab("Buffer Width (100x in ft)") + 
+                              xlab("Buffer width (100x in ft)") + 
                               ylab("Percent") +
                               ylim(0, 1) +
                               # scale_x_continuous(breaks = pretty(percRejection$buff, n = length(buff_val))) +
@@ -68,21 +55,25 @@ ggsave(filename = "Plots/negControl_pval_total.png", plot = negControl_pval_tota
 print(percRejection)
 
 # Number of matches changing -----------------------------------------------------
-j = 6
-load(paste0('../Output_tree/combination/perc_pval_match_street', j, '.dat'))
-pval = perc_pval_match[1:60,]
-trees_numMatch = ggplot(pval, aes( y=perc_pval_less_05, x=num_match)) + 
+j = 2
+k = 5
+load(paste0('../Output_tree/combination/int_surface_pval', j, '.dat'))
+pval = int_surface_pval[1:60,c(1,k+1)]
+colnames(pval) = c("num_match", "perc")
+pval = as.data.frame(pval)
+trees_numMatch = ggplot(pval, aes( y=perc, x=num_match)) + 
     geom_point(color = "red", size = 1) +
     geom_smooth(method = "loess", formula = y ~ x) +
-    ggtitle(paste0("Matching's effect on type I error (",j+2,"00 ft)")) +
+    labs(title = paste0("Matching's effect on type I error (region size = ",j+2,"00 ft)"),
+         subtitle = paste0("Smoothing multiplier = ", adjust_val[k])) +
     xlab("Number of resampled streets") + 
     ylab("Type I error") +
-    ylim(0,max(pval$perc_pval_less_05)) + 
+    ylim(0,max(pval$perc)) + 
     scale_x_continuous(breaks = pretty(pval$num_match, n = 10)) +
     geom_hline(yintercept=0.05, linetype="dashed", 
-               color = "black", size = 1) +
+               color = "black", linewidth = 1) +
     theme(text = element_text(size=8))
-ggsave(filename = "Plots/trees_numMatch.png", plot = trees_numMatch, width = 1000, height = 500, units = "px")
+ggsave(filename = "Plots/trees_numMatch.png", plot = trees_numMatch, width = 1200, height = 500, units = "px")
 
 # Figure of Individual results -----------------------------------------------------
 perc_rejections_new = data.frame("orig" = c(1:length(buff_val)), 
@@ -165,8 +156,8 @@ for(b in 1:length(buff_val)) {
     i_p[[b]] = ggplot(myData, aes(y=yVal, x=buff)) +
         geom_bar(position="dodge", stat="identity") +
         labs(title="Percent of p-values less than 0.05 (Neg. Control)",
-             subtitle=paste0("Intensity surface correction, buffer = ", b+2, "00ft"))+
-        xlab("Spatial smoothness adjustment") +
+             subtitle=paste0("Intensity surface correction, region size = ", b+2, "00 ft"))+
+        xlab("Spatial smoothing multiplier") +
         ylab("Percent") +
         ylim(0,1)+
         # scale_x_continuous(breaks=1:length(adjust_val)) +
@@ -189,3 +180,21 @@ dev.off()
 ggsave(filename = "Plots/int_surface_single.png", plot = i_p[[ind_num]], width = 1000, height = 800, units = "px")
 
 
+# Updated p-value histograms
+load('../Output_tree/p_vals_match_rel/int_surface_pval_vec.dat')
+for(k in 1:length(buff_val)) {
+    p = vector(mode = 'list', length = length(buff_val))
+    for(i in 1:length(adjust_val)) {
+        adjPVal500 = data.frame("p" = na.omit(int_surface_pval_vec[[k]][,i]))
+        p[[i]] = ggplot(adjPVal500, aes(x=p)) + 
+                        geom_histogram(color="black", fill="white", bins = sqrt(144)) +
+                        xlab("P-Values") + 
+                        ylab("Frequency") + 
+                        labs(title = paste0("Corrected p-values, smoothing multiplier = ",adjust_val[i]),
+                             subtitle = paste0("region size = ", k + 2, "00 ft")) +
+                        theme(text = element_text(size=8))
+    }
+    pdf(paste0("Plots/correctedHist_surf", k,".pdf"), onefile = T)
+    grid.arrange(p[[1]], p[[2]],p[[3]], p[[4]], p[[5]], p[[6]], p[[7]], p[[8]], ncol = 2, nrow = 4)
+    dev.off()
+}

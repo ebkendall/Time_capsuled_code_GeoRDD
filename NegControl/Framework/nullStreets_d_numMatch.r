@@ -106,7 +106,7 @@ for(i in 1:8) {
     p[[i]] = ggplot(pval, aes( y=perc_pval_less_05, x=num_match)) + 
         geom_point(color = "red", size = 2) +
         geom_smooth(method = "loess", formula = y ~ x) +
-        ggtitle(paste0("Matching's Effect on Type I Error (",i,"00 ft)")) +
+        ggtitle(paste0("Matching's Effect on Type I Error (",i+2,"00 ft)")) +
         xlab("Number of Resampled Streets") + 
         ylab("Type I Error") +
         ylim(0,max(pval$perc_pval_less_05)) + 
@@ -133,14 +133,15 @@ for(j in 1:8) {
         p[[i]] = ggplot(pval, aes( y=perc_pval_less_05, x=num_match)) + 
             geom_point(color = "red", size = 2) +
             geom_smooth(method = "loess", formula = y ~ x) +
-            ggtitle(paste0("Matching's Effect on Type I Error (",i,"00 ft)")) +
+            ggtitle(paste0("Matching's Effect on Type I Error (Multiplier = ", 
+                           adjust_val[i], ") (",j+2,"00 ft)")) +
             xlab("Number of Resampled Streets") + 
             ylab("Type I Error") +
             ylim(0,max(pval$perc_pval_less_05)) + 
             scale_x_continuous(breaks = pretty(pval$num_match, n = 10)) +
             geom_hline(yintercept=0.05, linetype="dashed", 
                        color = "black", size = 1.5) +
-            theme(text = element_text(size=15))
+            theme(text = element_text(size=12))
     }
     pdf(paste0("../_visualizations/Plots/numMatch_street_adj", j, ".pdf"), onefile = T)
     grid.arrange(p[[1]], p[[2]], ncol = 1, nrow = 2)

@@ -13,6 +13,7 @@ perc_pval_match = vector(mode = "list", length = length(adjust_val))
 p_val_df <- vector(mode = "list", length = length(adjust_val))
 
 int_surface_pval = vector(mode = "list", length = 8)
+int_surface_pval_vec = vector(mode = "list", length = 8)
 
 for (k in 1:8) {
     print(k)
@@ -119,6 +120,8 @@ for (k in 1:8) {
     perc_pval_match[[k]]$perc_pval_less_05[row_num] = perc_pval
     p_val_df[[k]][row_num, ] = pval
 
+    int_surface_pval_vec[[k]] = pval_int
+
     for(jj in 1:length(adjust_val)) {
         int_surface_pval[[k]]$perc_pval_less_05[jj] = mean(pval_int[,jj] < 0.05, na.rm=TRUE)
     }
@@ -128,3 +131,4 @@ for (k in 1:8) {
 save(p_val_df, file = "../Output/p_vals_match_rel/p_val_df_new_stat_FINAL.dat")
 save(perc_pval_match, file = "../Output/p_vals_match_rel/perc_pval_match_new_stat_FINAL.dat")
 save(int_surface_pval, file = paste0("../Output/p_vals_match_rel/int_surface_pval.dat"))
+save(int_surface_pval_vec, file = paste0("../Output/p_vals_match_rel/int_surface_pval_vec.dat"))
