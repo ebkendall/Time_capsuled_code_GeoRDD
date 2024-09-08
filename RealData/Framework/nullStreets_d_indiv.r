@@ -85,6 +85,8 @@ for (k in 1:8) {
 
     pval = rep(NA, nrow(sim_orig$DATA))
     pval_int = matrix(NA, nrow = nrow(sim_orig$DATA), ncol = length(adjust_val))
+    
+    match_locations_per_obs = vector(mode = 'list', length = 164)
 
     for (ii in indexList_MAIN) {
         ## find matches
@@ -109,6 +111,7 @@ for (k in 1:8) {
 
         for(kk in 1:ncol(pval_int)) {
             w50_k = order(dist_temp)[1:match_vec[[2]][kk]]
+            if(kk == 2) {match_locations_per_obs[[ii]] = w50_k}
             null_dist_int = t_stat_int_surface[w50_k, ]
             pval_int[ii, kk] = mean(null_dist_int[,kk] > t_stat_int_surface_orig[ii,kk], na.rm=TRUE)
         }
@@ -132,3 +135,44 @@ save(p_val_df, file = "../Output/p_vals_match_rel/p_val_df_new_stat_FINAL.dat")
 save(perc_pval_match, file = "../Output/p_vals_match_rel/perc_pval_match_new_stat_FINAL.dat")
 save(int_surface_pval, file = paste0("../Output/p_vals_match_rel/int_surface_pval.dat"))
 save(int_surface_pval_vec, file = paste0("../Output/p_vals_match_rel/int_surface_pval_vec.dat"))
+
+# Plot the location of the matches for each one
+library(sp)
+load('../Data/nycSub.RData')
+load(paste0('../Data/Street_Seg/streets', 3, '.dat'))
+
+pdf('Matched_streets.pdf')
+for(ii in indexList_MAIN) {
+    print(ii)
+    plot(nycSub, main = ii)
+    # precinct, indigo, juliet
+    test1 = combinedMatchingSetupFix2[match_locations_per_obs[[ii]],c("precinct", "indigo", "juliet")]
+    for(t in 1:nrow(test1)) {
+        plot(longStrBroke[[test1[t,1]]][[test1[t,2]]][[test1[t,3]]]$shorterStreet, add = T,
+             lwd = 2, col = t)
+    } 
+}
+dev.off()
+
+set.seed(10)
+pdf('Null_sampled.pdf')
+match_av = match_vec[[2]][2]
+for (rep in 1:100) {
+    # This is the repetition to get the null distribution
+    print(rep)
+    combo_index = NULL
+    for(ii in indexList_MAIN) {
+        rand_ind = sample(c(1:match_av), 1)
+        combo_index = c(combo_index, match_locations_per_obs[[ii]][rand_ind])
+    }
+    
+    plot(nycSub, main = rep)
+    # precinct, indigo, juliet
+    test1 = combinedMatchingSetupFix2[combo_index,c("precinct", "indigo", "juliet")]
+    for(t in 1:nrow(test1)) {
+        plot(longStrBroke[[test1[t,1]]][[test1[t,2]]][[test1[t,3]]]$shorterStreet, add = T,
+             lwd = 2, col = t)
+    }
+}
+dev.off()
+

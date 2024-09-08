@@ -101,8 +101,8 @@ for (k in 1:length(buff_val)) {
 
 }
 
-save(global_null, file = paste0("../Output/Global/global_null_FINAL.dat"))
-save(global_null_int_surf, file = paste0("../Output/Global/global_null_int_surf_FINAL.dat"))
+# save(global_null, file = paste0("../Output/Global/global_null_FINAL.dat"))
+# save(global_null_int_surf, file = paste0("../Output/Global/global_null_int_surf_FINAL.dat"))
 
 
 # ------------------------------------------------------------------------------
@@ -119,12 +119,16 @@ for(k in 1:length(buff_val)) {
     print(k)
     n_matches = match_vec[[1]]
 
-    global_t_stat[[k]] = data.frame("max_t_stat" = rep(NA, n_matches),
+    global_t_stat[[k]] = data.frame("max_t_stat"  = rep(NA, n_matches),
+                                    "mean_t_stat" = rep(NA, n_matches),
+                                    "med_t_stat" = rep(NA, n_matches),
                                     "max_loc" = rep(NA, n_matches))
     global_t_stat_int_surf[[k]] = vector(mode='list',length=length(adjust_val))
     for(jj in 1:length(global_t_stat_int_surf[[k]])) {
         match_jj = match_vec[[2]][jj]
-        global_t_stat_int_surf[[k]][[jj]] = data.frame("max_t_stat" = rep(NA, match_jj),
+        global_t_stat_int_surf[[k]][[jj]] = data.frame("max_t_stat"  = rep(NA, match_jj),
+                                                       "mean_t_stat" = rep(NA, match_jj),
+                                                       "med_t_stat" = rep(NA, match_jj),
                                                        "max_loc" = rep(NA, match_jj))
     }
     
@@ -139,8 +143,10 @@ for(k in 1:length(buff_val)) {
             temp_max[myInd] = global_null[[k]][ii, rand_ind]
             myInd = myInd + 1
         }
-        global_t_stat[[k]][rep, 1] = mean(temp_max, na.rm = T)
-        global_t_stat[[k]][rep, 2] = temp_loc[which.max(temp_max)]
+        global_t_stat[[k]][rep, 1] = max(temp_max, na.rm = T)
+        global_t_stat[[k]][rep, 2] = mean(temp_max, na.rm = T)
+        global_t_stat[[k]][rep, 3] = median(temp_max, na.rm = T)
+        global_t_stat[[k]][rep, 4] = temp_loc[which.max(temp_max)]
     }
     
     for(av in 1:length(adjust_val)) {
@@ -157,12 +163,113 @@ for(k in 1:length(buff_val)) {
                 temp_max[myInd] = global_null_int_surf[[k]][[av]][ii, rand_ind]
                 myInd = myInd + 1
             }
-            global_t_stat_int_surf[[k]][[av]][rep, 1] = mean(temp_max, na.rm = T)
-            global_t_stat_int_surf[[k]][[av]][rep, 2] = temp_loc[which.max(temp_max)]
+            global_t_stat_int_surf[[k]][[av]][rep, 1] = max(temp_max, na.rm = T)
+            global_t_stat_int_surf[[k]][[av]][rep, 2] = mean(temp_max, na.rm = T)
+            global_t_stat_int_surf[[k]][[av]][rep, 3] = median(temp_max, na.rm = T)
+            global_t_stat_int_surf[[k]][[av]][rep, 4] = temp_loc[which.max(temp_max)]
         }
     }
 
 }
 
-save(global_t_stat, file = paste0("../Output/Global/global_t_stat_FINAL.dat"))
-save(global_t_stat_int_surf, file = paste0("../Output/Global/global_t_stat_int_surf_FINAL.dat"))
+# save(global_t_stat, file = paste0("../Output/Global/global_t_stat_FINAL.dat"))
+# save(global_t_stat_int_surf, file = paste0("../Output/Global/global_t_stat_int_surf_FINAL.dat"))
+
+# Computing the p-value
+p_val_df = matrix(nrow =length(buff_val), ncol = 3)
+colnames(p_val_df) = c("max", "mean", "median")
+p_val_df_int_surf = vector(mode = 'list', length = 3)
+names(p_val_df_int_surf) = c("max", "mean", "median")
+p_val_df_int_surf[[1]] = p_val_df_int_surf[[2]] = p_val_df_int_surf[[3]] = 
+    matrix(nrow=length(buff_val), ncol = length(adjust_val))
+
+pdf('test_global_tStat_tau.pdf')
+par(mfrow = c(3,1))
+for(k in 1:length(buff_val)) {
+    
+    load(paste0('../Output/origGridInfo/sim_orig_', k,".dat"))
+    which_zeros_orig = which(sim_orig$DATA$n_off_1_prec == 0 | sim_orig$DATA$n_off_2_prec == 0)
+    sim_orig$DATA$n_arr_1_prec[which_zeros_orig] = sim_orig$DATA$n_arr_1_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_arr_2_prec[which_zeros_orig] = sim_orig$DATA$n_arr_2_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_off_1_prec[which_zeros_orig] = sim_orig$DATA$n_off_1_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_off_2_prec[which_zeros_orig] = sim_orig$DATA$n_off_2_prec[which_zeros_orig] + 1
+    
+    t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec / sim_orig$DATA$n_off_1_prec
+                      - sim_orig$DATA$n_arr_2_prec / sim_orig$DATA$n_off_2_prec)
+    
+    t_stat_max = max(t_stat_orig, na.rm = T)
+    t_stat_mean = mean(t_stat_orig, na.rm = T)
+    t_stat_median = median(t_stat_orig, na.rm = T)
+    
+    p_val_df[k, 'max'] = mean(global_t_stat[[k]]$max_t_stat > t_stat_max)
+    p_val_df[k, 'mean'] = mean(global_t_stat[[k]]$mean_t_stat > t_stat_mean)
+    p_val_df[k, 'median'] = mean(global_t_stat[[k]]$med_t_stat > t_stat_median)
+    
+    
+    t_stat_int_surface_orig = sim_orig$INT_SURFACE[,1:8]
+    for(kk in 1:length(adjust_val)) {
+        for(m in 1:3) {
+            if(m == 1) {
+                t_stat_kk = max(t_stat_int_surface_orig[,kk], na.rm = T)
+                global_null_kk = global_t_stat_int_surf[[k]][[kk]]$max_t_stat
+            } else if(m == 2) {
+                t_stat_kk = mean(t_stat_int_surface_orig[,kk], na.rm = T)
+                global_null_kk = global_t_stat_int_surf[[k]][[kk]]$mean_t_stat
+            } else {
+                t_stat_kk = median(t_stat_int_surface_orig[,kk], na.rm = T)   
+                global_null_kk = global_t_stat_int_surf[[k]][[kk]]$med_t_stat
+            }
+            
+            p_val_df_int_surf[[m]][k, kk] = mean(global_null_kk > t_stat_kk, na.rm = T)
+            hist(global_null_kk, main = paste0(colnames(p_val_df)[m], ': buff(', 
+                                               buff_val[k], '), adjust(', adjust_val[kk], ')'), 
+                 breaks = sqrt(length(global_null_kk)),
+                 xlab = paste0("na: ", sum(is.na(global_null_kk))), 
+                 ylab = round(t_stat_kk, digits = 5))
+            abline(v = t_stat_kk, lwd = 2, col = 'red')
+        }
+    }
+    
+}
+dev.off()
+
+pdf('test_global_tStat_theta.pdf')
+par(mfrow = c(3,1))
+for(k in 1:length(buff_val)) {
+    
+    load(paste0('../Output/origGridInfo/sim_orig_', k,".dat"))
+    which_zeros_orig = which(sim_orig$DATA$n_off_1_prec == 0 | sim_orig$DATA$n_off_2_prec == 0)
+    sim_orig$DATA$n_arr_1_prec[which_zeros_orig] = sim_orig$DATA$n_arr_1_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_arr_2_prec[which_zeros_orig] = sim_orig$DATA$n_arr_2_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_off_1_prec[which_zeros_orig] = sim_orig$DATA$n_off_1_prec[which_zeros_orig] + 1
+    sim_orig$DATA$n_off_2_prec[which_zeros_orig] = sim_orig$DATA$n_off_2_prec[which_zeros_orig] + 1
+    
+    t_stat_orig = abs(sim_orig$DATA$n_arr_1_prec / sim_orig$DATA$n_off_1_prec
+                      - sim_orig$DATA$n_arr_2_prec / sim_orig$DATA$n_off_2_prec)
+    
+    t_stat_max = max(t_stat_orig, na.rm = T)
+    t_stat_mean = mean(t_stat_orig, na.rm = T)
+    t_stat_median = median(t_stat_orig, na.rm = T)
+    
+    p_val_df[k, 'max'] = mean(global_t_stat[[k]]$max_t_stat > t_stat_max)
+    hist(global_t_stat[[k]]$max_t_stat, main = paste0('max: buff(', buff_val[k], ')'), 
+         breaks = sqrt(length(global_t_stat[[k]]$max_t_stat)),
+         xlab = paste0("na: ", sum(is.na(global_t_stat[[k]]$max_t_stat))), 
+         ylab = round(t_stat_max, digits = 5))
+    abline(v = t_stat_max, lwd = 2, col = 'red')
+    
+    p_val_df[k, 'mean'] = mean(global_t_stat[[k]]$mean_t_stat > t_stat_mean)
+    hist(global_t_stat[[k]]$mean_t_stat, main = paste0('mean: buff(', buff_val[k], ')'), 
+         breaks = sqrt(length(global_t_stat[[k]]$mean_t_stat)),
+         xlab = paste0("na: ", sum(is.na(global_t_stat[[k]]$mean_t_stat))), 
+         ylab = round(t_stat_mean, digits = 5))
+    abline(v = t_stat_mean, lwd = 2, col = 'red')
+    
+    p_val_df[k, 'median'] = mean(global_t_stat[[k]]$med_t_stat > t_stat_median)
+    hist(global_t_stat[[k]]$med_t_stat, main = paste0('median: buff(', buff_val[k], ')'), 
+         breaks = sqrt(length(global_t_stat[[k]]$med_t_stat)),
+         xlab = paste0("na: ", sum(is.na(global_t_stat[[k]]$med_t_stat))), 
+         ylab = round(t_stat_median, digits = 5))
+    abline(v = t_stat_median, lwd = 2, col = 'red')
+}
+dev.off()
