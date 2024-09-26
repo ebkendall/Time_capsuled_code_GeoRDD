@@ -111,7 +111,7 @@ for (k in 1:8) {
 
         for(kk in 1:ncol(pval_int)) {
             w50_k = order(dist_temp)[1:match_vec[[2]][kk]]
-            if(kk == 2) {match_locations_per_obs[[ii]] = w50_k}
+            if(kk == 2) {match_locations_per_obs[[ii]] = order(dist_temp)[1:200]}
             null_dist_int = t_stat_int_surface[w50_k, ]
             pval_int[ii, kk] = mean(null_dist_int[,kk] > t_stat_int_surface_orig[ii,kk], na.rm=TRUE)
         }
@@ -136,43 +136,89 @@ save(perc_pval_match, file = "../Output/p_vals_match_rel/perc_pval_match_new_sta
 save(int_surface_pval, file = paste0("../Output/p_vals_match_rel/int_surface_pval.dat"))
 save(int_surface_pval_vec, file = paste0("../Output/p_vals_match_rel/int_surface_pval_vec.dat"))
 
-# Plot the location of the matches for each one
-library(sp)
-load('../Data/nycSub.RData')
-load(paste0('../Data/Street_Seg/streets', 3, '.dat'))
-
-pdf('Matched_streets.pdf')
-for(ii in indexList_MAIN) {
-    print(ii)
-    plot(nycSub, main = ii)
-    # precinct, indigo, juliet
-    test1 = combinedMatchingSetupFix2[match_locations_per_obs[[ii]],c("precinct", "indigo", "juliet")]
-    for(t in 1:nrow(test1)) {
-        plot(longStrBroke[[test1[t,1]]][[test1[t,2]]][[test1[t,3]]]$shorterStreet, add = T,
-             lwd = 2, col = t)
-    } 
-}
-dev.off()
-
-set.seed(10)
-pdf('Null_sampled.pdf')
-match_av = match_vec[[2]][2]
-for (rep in 1:100) {
-    # This is the repetition to get the null distribution
-    print(rep)
-    combo_index = NULL
-    for(ii in indexList_MAIN) {
-        rand_ind = sample(c(1:match_av), 1)
-        combo_index = c(combo_index, match_locations_per_obs[[ii]][rand_ind])
-    }
-    
-    plot(nycSub, main = rep)
-    # precinct, indigo, juliet
-    test1 = combinedMatchingSetupFix2[combo_index,c("precinct", "indigo", "juliet")]
-    for(t in 1:nrow(test1)) {
-        plot(longStrBroke[[test1[t,1]]][[test1[t,2]]][[test1[t,3]]]$shorterStreet, add = T,
-             lwd = 2, col = t)
-    }
-}
-dev.off()
-
+# # Plot the location of the matches for each one
+# library(sp)
+# load('../Data/nycSub.RData')
+# load(paste0('../Data/Street_Seg/streets', 3, '.dat'))
+# 
+# pdf('Matched_streets.pdf')
+# top_5_precincts = NULL
+# for(ii in indexList_MAIN) {
+#     print(ii)
+#     plot(nycSub, main = ii)
+#     # precinct, indigo, juliet
+#     test1 = combinedMatchingSetupFix2[match_locations_per_obs[[ii]],c("precinct", "indigo", "juliet")]
+#     top_5_prec = tail(sort(table(test1$precinct)), 5)
+#     top_5_prec_name = as.numeric(names(top_5_prec))
+#     top_5_precincts = c(top_5_precincts, top_5_prec_name)
+#     # for(j in top_5_prec_name) {
+#     #     print(paste0("Precinct ", j, " has ", top_5_prec[as.character(j)], 
+#     #                  " of the ", nrow(test1), " matches"))
+#     #     print(paste0("Of the ", top_5_prec[as.character(j)], ", there are ", 
+#     #                  length(unique(test1$indigo[test1$precinct == j])), " unique parent streets"))
+#     #     cat('\n')
+#     # }
+#     
+#     for(t in 1:nrow(test1)) {
+#         plot(longStrBroke[[test1[t,1]]][[test1[t,2]]][[test1[t,3]]]$shorterStreet, add = T,
+#              lwd = 2, col = t)
+#     } 
+# }
+# dev.off()
+# 
+# print(table(top_5_precincts))
+# 
+# set.seed(10)
+# pdf('Null_sampled2.pdf')
+# # match_av = match_vec[[2]][4]
+# match_av = 200
+# for (rep in 1:100) {
+#     # This is the repetition to get the null distribution
+#     print(rep)
+#     combo_index = NULL
+#     for(ii in indexList_MAIN) {
+#         rand_ind = sample(c(1:match_av), 1)
+#         combo_index = c(combo_index, match_locations_per_obs[[ii]][rand_ind])
+#     }
+#     
+#     plot(nycSub, main = rep)
+#     # precinct, indigo, juliet
+#     test1 = combinedMatchingSetupFix2[combo_index,c("precinct", "indigo", "juliet")]
+#     for(t in 1:nrow(test1)) {
+#         plot(longStrBroke[[test1[t,1]]][[test1[t,2]]][[test1[t,3]]]$shorterStreet, add = T,
+#              lwd = 2, col = t)
+#     }
+# }
+# dev.off()
+# 
+# nTests = 144
+# nMatches = 50
+# nSim = 1000
+# indTests = matrix(NA, nSim, nTests)
+# globalTests = rep(NA, nSim)
+# 
+# for (ni in 1 : nSim) {
+#     obsStatistics = rexp(nTests, 100)
+#     obsMedian = median(obsStatistics)
+#     
+#     ## All are the same
+#     nullStreets = rexp(nMatches, 100)
+#     for (ii in 1 : nTests) {
+#         indTests[ni,ii] = mean((obsStatistics[ii] > nullStreets))
+#     }
+#     
+#     nullMedian = rep(NA, nMatches)
+# 
+#     for (nn in 1 : nMatches) {
+#         nullMedian[nn] = median(sample(nullStreets, nTests, replace = TRUE))
+#     }
+#     globalTests[ni] = mean(obsMedian > nullMedian)
+#     
+# }
+# hist(globalTests)
+# 
+# hist(indTests[,1])
+# hist(indTests[,6])
+# 
+# apply(indTests, 2, mean)
+# apply(indTests, 2, mean)

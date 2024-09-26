@@ -14,6 +14,9 @@ buff_val = 3:10
 global_null = vector(mode = "list", length = length(buff_val))
 global_null_int_surf = vector(mode = "list", length = length(buff_val))
 
+global_samp = vector(mode = "list", length = length(buff_val))
+global_samp_int_surf = vector(mode = "list", length = length(buff_val))
+
 for (k in 1:length(buff_val)) {
     
     match_vec = match_count_list[[k]]
@@ -25,6 +28,12 @@ for (k in 1:length(buff_val)) {
     global_null_int_surf[[k]] = vector(mode = 'list', length = length(adjust_val))
     for(jj in 1:length(global_null_int_surf[[k]])) {
         global_null_int_surf[[k]][[jj]] = matrix(nrow = 164, ncol = match_vec[[2]][jj])
+    }
+    
+    global_samp[[k]] = vector(mode = 'list', length = 164)
+    global_samp_int_surf[[k]] = vector(mode = 'list', length = length(adjust_val))
+    for(jj in 1:length(global_samp_int_surf[[k]])) {
+        global_samp_int_surf[[k]][[jj]] = vector(mode = 'list', length = 164)
     }
   
     load(paste0('../Output/nullGridInfo/combinedMatchingSetup', k, ".dat"))
@@ -92,10 +101,24 @@ for (k in 1:length(buff_val)) {
 
         global_null[[k]][ii,] = null_dist
         
+        ind_order = order(dist_temp)[1:min(5000, length(dist_temp))] # sample from the best 5,000
+        t_stat_ind = t_stat[ind_order]
+        prob_w50 = exp(-5*dist_temp[ind_order])
+        prob_w50 = prob_w50 / sum(prob_w50)
+        prob_dist = cbind(ind_order, t_stat_ind, prob_w50)
+        colnames(prob_dist) = c("w50_ind", "w50_tstat", "w50_prob")
+        
+        global_samp[[k]][[ii]] = prob_dist
+        
         for(kk in 1:length(adjust_val)) {
             w50_k = order(dist_temp)[1:match_vec[[2]][kk]]
             null_dist_int = c(t_stat_int_surface[w50_k, kk])
             global_null_int_surf[[k]][[kk]][ii, ] = null_dist_int
+            
+            t_stat_ind_kk = t_stat_int_surface[ind_order, kk]
+            prob_dist_kk = cbind(ind_order, t_stat_ind_kk, prob_w50)
+            colnames(prob_dist_kk) = c("w50_ind", "w50_tstat", "w50_prob")
+            global_samp_int_surf[[k]][[kk]][[ii]] = prob_dist_kk
         }
     }
 
@@ -132,15 +155,16 @@ for(k in 1:length(buff_val)) {
                                                        "max_loc" = rep(NA, match_jj))
     }
     
-    for (rep in 1:n_matches) {
+    for (rep in 1:500) {
         # This is the repetition to get the null distribution
         temp_loc = temp_max = c()
         myInd = 1
         for(ii in indexList_MAIN) {
-            rand_ind = sample(c(1:n_matches), 1)
-
+            # rand_ind = sample(c(1:n_matches), 1)
             temp_loc[myInd] = ii
-            temp_max[myInd] = global_null[[k]][ii, rand_ind]
+            # temp_max[myInd] = global_null[[k]][ii, rand_ind]
+            temp_max[myInd] = sample(x = global_samp[[k]][[ii]][,"w50_tstat"], size = 1,
+                                     prob = global_samp[[k]][[ii]][,"w50_prob"])
             myInd = myInd + 1
         }
         global_t_stat[[k]][rep, 1] = max(temp_max, na.rm = T)
@@ -152,15 +176,16 @@ for(k in 1:length(buff_val)) {
     for(av in 1:length(adjust_val)) {
         print(paste0("av: ", av))
         match_av = match_vec[[2]][av]
-        for (rep in 1:match_av) {
+        for (rep in 1:500) {
             # This is the repetition to get the null distribution
             temp_loc = temp_max = c()
             myInd = 1
             for(ii in indexList_MAIN) {
-                rand_ind = sample(c(1:match_av), 1)
-                
+                # rand_ind = sample(c(1:match_av), 1)
                 temp_loc[myInd] = ii
-                temp_max[myInd] = global_null_int_surf[[k]][[av]][ii, rand_ind]
+                # temp_max[myInd] = global_null_int_surf[[k]][[av]][ii, rand_ind]
+                temp_max[myInd] = sample(x = global_samp_int_surf[[k]][[av]][[ii]][,"w50_tstat"], size = 1,
+                                         prob = global_samp_int_surf[[k]][[av]][[ii]][,"w50_prob"])
                 myInd = myInd + 1
             }
             global_t_stat_int_surf[[k]][[av]][rep, 1] = max(temp_max, na.rm = T)
@@ -172,8 +197,8 @@ for(k in 1:length(buff_val)) {
 
 }
 
-# save(global_t_stat, file = paste0("../Output/Global/global_t_stat_FINAL.dat"))
-# save(global_t_stat_int_surf, file = paste0("../Output/Global/global_t_stat_int_surf_FINAL.dat"))
+save(global_t_stat, file = paste0("../Output/Global/global_t_stat_random.dat"))
+save(global_t_stat_int_surf, file = paste0("../Output/Global/global_t_stat_int_surf_random.dat"))
 
 # Computing the p-value
 p_val_df = matrix(nrow =length(buff_val), ncol = 3)
@@ -224,7 +249,7 @@ for(k in 1:length(buff_val)) {
             hist(global_null_kk, main = paste0(colnames(p_val_df)[m], ': buff(', 
                                                buff_val[k], '), adjust(', adjust_val[kk], ')'), 
                  breaks = sqrt(length(global_null_kk)),
-                 xlab = paste0("na: ", sum(is.na(global_null_kk))), 
+                 xlab = paste0("matches: ", length(global_null_kk)), 
                  ylab = round(t_stat_kk, digits = 5))
             abline(v = t_stat_kk, lwd = 2, col = 'red')
         }

@@ -32,14 +32,22 @@ for (index in 1:8) {
                                       "area1" = rep(-1,l), "area2" = rep(-1,l), "splitProper" = rep(F,l),
                                       "n_arr_1" = rep(-1,l), "n_arr_2" = rep(-1,l), "n_off_1" = rep(-1,l),
                                       "n_off_2" = rep(-1,l), "naive_pval" = rep(-1,l)),
-                                INT_SURFACE = data.frame("spatialDiff1" = rep(-1,l),
-                                                         "spatialDiff2" = rep(-1,l),
-                                                         "spatialDiff3" = rep(-1,l),
-                                                         "spatialDiff4" = rep(-1,l),
-                                                         "spatialDiff5" = rep(-1,l),
-                                                         "spatialDiff6" = rep(-1,l),
-                                                         "spatialDiff7" = rep(-1,l),
-                                                         "spatialDiff8" = rep(-1,l)))
+                               INT_SURFACE = data.frame("int_1a" = rep(-1,l), "int_1b" = rep(-1,l), "spatialDiff1" = rep(-1,l),
+                                                        "int_2a" = rep(-1,l), "int_2b" = rep(-1,l), "spatialDiff2" = rep(-1,l),
+                                                        "int_3a" = rep(-1,l), "int_3b" = rep(-1,l), "spatialDiff3" = rep(-1,l),
+                                                        "int_4a" = rep(-1,l), "int_4b" = rep(-1,l), "spatialDiff4" = rep(-1,l),
+                                                        "int_5a" = rep(-1,l), "int_5b" = rep(-1,l), "spatialDiff5" = rep(-1,l),
+                                                        "int_6a" = rep(-1,l), "int_6b" = rep(-1,l), "spatialDiff6" = rep(-1,l),
+                                                        "int_7a" = rep(-1,l), "int_7b" = rep(-1,l), "spatialDiff7" = rep(-1,l),
+                                                        "int_8a" = rep(-1,l), "int_8b" = rep(-1,l), "spatialDiff8" = rep(-1,l)),
+                               OFF_SURFACE = data.frame("int_1a" = rep(-1,l), "int_1b" = rep(-1,l), "spatialDiff1" = rep(-1,l),
+                                                        "int_2a" = rep(-1,l), "int_2b" = rep(-1,l), "spatialDiff2" = rep(-1,l),
+                                                        "int_3a" = rep(-1,l), "int_3b" = rep(-1,l), "spatialDiff3" = rep(-1,l),
+                                                        "int_4a" = rep(-1,l), "int_4b" = rep(-1,l), "spatialDiff4" = rep(-1,l),
+                                                        "int_5a" = rep(-1,l), "int_5b" = rep(-1,l), "spatialDiff5" = rep(-1,l),
+                                                        "int_6a" = rep(-1,l), "int_6b" = rep(-1,l), "spatialDiff6" = rep(-1,l),
+                                                        "int_7a" = rep(-1,l), "int_7b" = rep(-1,l), "spatialDiff7" = rep(-1,l),
+                                                        "int_8a" = rep(-1,l), "int_8b" = rep(-1,l), "spatialDiff8" = rep(-1,l)))
     rowNum = 1
 
     load(paste0("../Data/OutputStrInfo_realData/strInfo_", buff_ind, "_", k, ".dat")) # contains the buffer object
@@ -101,14 +109,36 @@ for (index in 1:8) {
             # Making the border line a spatstat object
             border_line_1_2 = longStrBroke[[k]][[i]][[j]]$shorterStreet
             b_c_1_2 = border_line_1_2@lines[[1]]@Lines[[1]]@coords
-            b_line_pp = ppp(b_c_1_2[,"x"], b_c_1_2[,"y"],
-                            c(min(b_c_1_2[,"x"]), max(b_c_1_2[,"x"])), 
-                            c(min(b_c_1_2[,"y"]), max(b_c_1_2[,"y"])))
-            b_line_1_2 = psp(b_c_1_2[1:(nrow(b_c_1_2)-1),"x"], 
-                             b_c_1_2[1:(nrow(b_c_1_2)-1),"y"],
-                             b_c_1_2[2:nrow(b_c_1_2),"x"],
-                             b_c_1_2[2:nrow(b_c_1_2),"y"],
+            
+            endpts = which(multiplicity(b_c_1_2) == 1)
+            if(length(endpts) > 2) {
+                print(paste0(i, " problem!"))
+            } 
+            if(endpts[1] != 1 | endpts[2] != nrow(b_c_1_2)) {
+                print(paste0(i, " out of order"))
+                b_c_1_2_new = rbind(b_c_1_2[endpts[2]:nrow(b_c_1_2), ], b_c_1_2[1:endpts[1], ])
+                b_c_1_2 = b_c_1_2_new
+                border_line_1_2@lines[[1]]@Lines[[1]]@coords = b_c_1_2
+            }
+            
+            test_b_c = unique(b_c_1_2)
+            b_line_pp = ppp(test_b_c[,"x"], test_b_c[,"y"],
+                            c(min(test_b_c[,"x"]), max(test_b_c[,"x"])),
+                            c(min(test_b_c[,"y"]), max(test_b_c[,"y"])))
+            b_line_1_2 = psp(test_b_c[1:(nrow(test_b_c)-1),"x"],
+                             test_b_c[1:(nrow(test_b_c)-1),"y"],
+                             test_b_c[2:nrow(test_b_c),"x"],
+                             test_b_c[2:nrow(test_b_c),"y"],
                              Window(b_line_pp))
+            # 
+            # b_line_pp = ppp(b_c_1_2[,"x"], b_c_1_2[,"y"],
+            #                 c(min(b_c_1_2[,"x"]), max(b_c_1_2[,"x"])), 
+            #                 c(min(b_c_1_2[,"y"]), max(b_c_1_2[,"y"])))
+            # b_line_1_2 = psp(b_c_1_2[1:(nrow(b_c_1_2)-1),"x"], 
+            #                  b_c_1_2[1:(nrow(b_c_1_2)-1),"y"],
+            #                  b_c_1_2[2:nrow(b_c_1_2),"x"],
+            #                  b_c_1_2[2:nrow(b_c_1_2),"y"],
+            #                  Window(b_line_pp))
             
             # Defining window
             box_x_min = min(c(poly1@Polygons[[1]]@coords[,"x"], 
