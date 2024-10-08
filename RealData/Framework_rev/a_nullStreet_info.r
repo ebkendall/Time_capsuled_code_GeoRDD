@@ -92,33 +92,6 @@ for (index in 1:8) {
                                      poly2@Polygons[[1]]@coords[,1], 
                                      poly2@Polygons[[1]]@coords[,2])
             
-            n_arr_1 = sum(arr_1 > 0)
-            n_arr_2 = sum(arr_2 > 0)
-            n_off_1 = sum(off_1 > 0)
-            n_off_2 = sum(off_2 > 0)
-            
-            arr_1_ind = arr_sub$main_ind[which(arr_1 > 0)]
-            arr_2_ind = arr_sub$main_ind[which(arr_2 > 0)]
-            
-            off_1_ind = off_sub$main_ind[which(off_1 > 0)]
-            off_2_ind = off_sub$main_ind[which(off_2 > 0)]
-            
-            # Naive p-value
-            count1 = n_arr_1
-            count2 = n_arr_2
-
-            if(count1 < 2 | count2 < 2) next
-
-            n = count1 + count2
-            p = 0.5
-            pval = NA
-            
-            if (count1 <= n/2) {
-              pval = pbinom(count1, n, p) + 1 - pbinom(count2, n, p)
-            } else {
-              pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
-            }
-            
             # Making the border line a spatstat object
             border_line_1_2 = longStrBroke[[k]][[i]][[j]]$shorterStreet
             b_c_1_2 = border_line_1_2@lines[[1]]@Lines[[1]]@coords
@@ -285,6 +258,27 @@ for (index in 1:8) {
                                                           b_line_1_2, adjust_val)
                 crime_surface_info  = intensity_surf_diff(pp_1_weight_o, pp_2_weight_o, 
                                                           b_line_1_2, adjust_val)
+            }
+            
+            # Naive p-value
+            n_arr_1 = length(prec_1_x)     # sum(arr_1 > 0)
+            n_arr_2 = length(prec_2_x)     # sum(arr_2 > 0)
+            n_off_1 = length(prec_1_x_off) # sum(off_1 > 0)
+            n_off_2 = length(prec_2_x_off) # sum(off_2 > 0)
+            
+            count1 = n_arr_1
+            count2 = n_arr_2
+            
+            if(count1 < 2 | count2 < 2) next
+            
+            n = count1 + count2
+            p = 0.5
+            pval = NA
+            
+            if (count1 <= n/2) {
+                pval = pbinom(count1, n, p) + 1 - pbinom(count2, n, p)
+            } else {
+                pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
             }
             
             

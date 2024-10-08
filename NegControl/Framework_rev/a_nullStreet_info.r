@@ -70,22 +70,6 @@ for (index in 1:8) {
                                   poly2@Polygons[[1]]@coords[,1], 
                                   poly2@Polygons[[1]]@coords[,2])
             
-            
-            count1 = sum(p1 > 0)
-            count2 = sum(p2 > 0)
-            
-            if(count1 < 2 | count2 < 2) next
-            
-            n = count1 + count2
-            p = 0.5
-            pval = NA
-            
-            if (count1 <= n/2) {
-                pval = pbinom(count1, n, p) + 1 - pbinom(count2, n, p)
-            } else {
-                pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
-            }
-            
             # Making the border line a spatstat object
             border_line_1_2 = longStrBroke[[k]][[i]][[j]]$shorterStreet
             b_c_1_2 = border_line_1_2@lines[[1]]@Lines[[1]]@coords
@@ -193,6 +177,20 @@ for (index in 1:8) {
                                                         b_line_1_2, adjust_val)
             }
             
+            # Naive p-value
+            count1 = length(prec_1_x) # sum(p1 > 0)
+            count2 = length(prec_2_x) # sum(p2 > 0)
+            
+            # if(count1 < 2 | count2 < 2) next
+            n = count1 + count2
+            p = 0.5
+            pval = NA
+            
+            if (count1 <= n/2) {
+                pval = pbinom(count1, n, p) + 1 - pbinom(count2, n, p)
+            } else {
+                pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
+            }
             
             null_str_info[rowNum,] = c(k, i, j, s1, s2, area1, area2, 
                                        T, count1, count2, pval,

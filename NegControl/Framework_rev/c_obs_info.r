@@ -6,8 +6,8 @@ adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
 
 same_sig = T
 
-for (k in 1:length(adjust_val)) {
-    # k = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
+# for (k in 1:length(adjust_val)) {
+    k = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
     print(k)
     set.seed(k)
     
@@ -83,7 +83,6 @@ for (k in 1:length(adjust_val)) {
         poly3 = st_buffer(st_as_sf(border_line_1_2), dist = buff_ind * 100)
         poly3_coord = sf::st_coordinates(poly3)
         
-        # Naive p-value info  -------------------------------------------------
         p1 = point.in.polygon(treesByPrec[[prec_ind_1]][,1], treesByPrec[[prec_ind_1]][,2],
                               poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,1],
                               poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,2])
@@ -91,21 +90,8 @@ for (k in 1:length(adjust_val)) {
                               poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
                               poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
         
-        count1 = sum(p1 > 0)
-        count2 = sum(p2 > 0)
-        
-        n = count1 + count2
-        p = 0.5
-        pval = NA
-        
-        if (count1 <= n/2) {
-            pval = pbinom(count1, n, p) + 1 - pbinom(count2, n, p)
-        } else {
-            pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
-        }
-        
         # Spatial intensity surface construction ------------------------------
-        
+
         # Define window based on the buffer width
         prec1 = poly1
         prec2 = poly2
@@ -220,6 +206,21 @@ for (k in 1:length(adjust_val)) {
             tree_surface_info = intensity_surf_diff(pp_1_weight, pp_2_weight, 
                                                     b_line_1_2, adjust_val)
         }
+
+        # Naive p-value info  -------------------------------------------------
+        count1 = length(prec_1_x) # sum(p1 > 0)
+        count2 = length(prec_2_x) # sum(p2 > 0)
+        
+        n = count1 + count2
+        p = 0.5
+        pval = NA
+        
+        if (count1 <= n/2) {
+            pval = pbinom(count1, n, p) + 1 - pbinom(count2, n, p)
+        } else {
+            pval = pbinom(count2, n, p) + 1 - pbinom(count1, n, p)
+        }
+        # ---------------------------------------------------------------------
         
         orig_str_info[i,] = c(area1, area2, s1, s2, count1, count2, pval,
                               tree_surface_info$sig, tree_surface_info$flag)
@@ -231,4 +232,4 @@ for (k in 1:length(adjust_val)) {
     origData = list(str_info = orig_str_info,
                     str_surf = orig_str_surf)
     save(origData, file=paste0("../Output_tree_rev/origGridInfo/origData_", k,".dat"))
-}
+# }

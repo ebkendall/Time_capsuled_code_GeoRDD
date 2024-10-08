@@ -6,11 +6,9 @@ for (k in 1:8) {
     neg_index = (nullData$str_info$precinct != -1)
     nullData$str_info = nullData$str_info[neg_index, ]
     nullData$str_surf$INT_SURFACE = nullData$str_surf$INT_SURFACE[neg_index, ]
-    nullData$str_surf$OFF_SURFACE = nullData$str_surf$OFF_SURFACE[neg_index, ]
     
     combinedMatchingSetup$DATA <- nullData$str_info
     combinedMatchingSetup$INT_SURFACE <- nullData$str_surf$INT_SURFACE
-    combinedMatchingSetup$OFF_SURFACE <- nullData$str_surf$OFF_SURFACE
 
     for(i in 2:77) {
         print(paste0(k, "_", i))
@@ -19,13 +17,10 @@ for (k in 1:8) {
         neg_index = (nullData$str_info$precinct != -1)
         nullData$str_info = nullData$str_info[neg_index, ]
         nullData$str_surf$INT_SURFACE = nullData$str_surf$INT_SURFACE[neg_index, ]
-        nullData$str_surf$OFF_SURFACE = nullData$str_surf$OFF_SURFACE[neg_index, ]
 
         combinedMatchingSetup$DATA = rbind(combinedMatchingSetup$DATA, nullData$str_info)
         combinedMatchingSetup$INT_SURFACE = rbind(combinedMatchingSetup$INT_SURFACE, 
                                                   nullData$str_surf$INT_SURFACE)
-        combinedMatchingSetup$OFF_SURFACE = rbind(combinedMatchingSetup$OFF_SURFACE, 
-                                                  nullData$str_surf$OFF_SURFACE)
     }
 
     # Filter out the streets that do not have any streets because those are not relevant
@@ -35,7 +30,6 @@ for (k in 1:8) {
     
     combinedMatchingSetup$DATA = combinedMatchingSetup$DATA[streetInd, ]
     combinedMatchingSetup$INT_SURFACE = combinedMatchingSetup$INT_SURFACE[streetInd, ]
-    combinedMatchingSetup$OFF_SURFACE = combinedMatchingSetup$OFF_SURFACE[streetInd, ]
     
     combinedMatchingSetupFix = combinedMatchingSetup
 

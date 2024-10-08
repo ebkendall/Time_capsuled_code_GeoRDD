@@ -6,8 +6,8 @@ adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
 
 same_sig = T
 
-for (k in 1:length(adjust_val)) {
-    # k = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
+# for (k in 1:length(adjust_val)) {
+    k = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
     print(k)
     set.seed(k)
     
@@ -228,14 +228,6 @@ for (k in 1:length(adjust_val)) {
         prec_1_y_off = dataOff_prec_1_2$y_coord_cd[off_1_tot > 0]
         prec_2_x_off = dataOff_prec_1_2$x_coord_cd[off_2_tot > 0]
         prec_2_y_off = dataOff_prec_1_2$y_coord_cd[off_2_tot > 0]
-        # off_1_tot = point.in.polygon(dataOff_prec_1[,"x_coord_cd"], dataOff_prec_1[,"y_coord_cd"],
-        #                               poly3_coord[,"X"], poly3_coord[,"Y"])
-        # off_2_tot = point.in.polygon(dataOff_prec_2[,"x_coord_cd"], dataOff_prec_2[,"y_coord_cd"],
-        #                               poly3_coord[,"X"], poly3_coord[,"Y"])
-        # prec_1_x_off = dataOff_prec_1$x_coord_cd[off_1_tot > 0]
-        # prec_1_y_off = dataOff_prec_1$y_coord_cd[off_1_tot > 0]
-        # prec_2_x_off = dataOff_prec_2$x_coord_cd[off_2_tot > 0]
-        # prec_2_y_off = dataOff_prec_2$y_coord_cd[off_2_tot > 0]
         
         # Randomly assign the points on the border
         p3 = point.in.polygon(dataOff_prec_1_2[,"x_coord_cd"], dataOff_prec_1_2[,"y_coord_cd"],
@@ -307,19 +299,23 @@ for (k in 1:length(adjust_val)) {
         }
         
         # Naive p-value (precinct specific) info  -----------------------------
-        arr_1_prec = point.in.polygon(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"],
-                                      poly3_coord[,"X"], poly3_coord[,"Y"])
-        arr_2_prec = point.in.polygon(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"],
-                                      poly3_coord[,"X"], poly3_coord[,"Y"])
-        off_1_prec = point.in.polygon(dataOff_prec_1[,"x_coord_cd"], dataOff_prec_1[,"y_coord_cd"],
-                                      poly3_coord[,"X"], poly3_coord[,"Y"])
-        off_2_prec = point.in.polygon(dataOff_prec_2[,"x_coord_cd"], dataOff_prec_2[,"y_coord_cd"],
-                                      poly3_coord[,"X"], poly3_coord[,"Y"])
-        # Counting the arrests and offenses (precinct specific)
-        n_arr_1_prec = sum(arr_1_prec > 0)
-        n_arr_2_prec = sum(arr_2_prec > 0)
-        n_off_1_prec = sum(off_1_prec > 0)
-        n_off_2_prec = sum(off_2_prec > 0)
+        # arr_1_prec_a = point.in.polygon(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"],
+        #                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,1],
+        #                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,2])
+        # arr_1_prec_b = point.in.polygon(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"],
+        #                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
+        #                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
+        # arr_2_prec_a = point.in.polygon(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"],
+        #                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,1],
+        #                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,2])
+        # arr_2_prec_b = point.in.polygon(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"],
+        #                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
+        #                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
+        
+        n_arr_1_prec = length(prec_1_x) # sum(arr_1_prec_a > 0) + sum(arr_1_prec_b > 0) 
+        n_arr_2_prec = length(prec_2_x) # sum(arr_2_prec_a > 0) + sum(arr_2_prec_b > 0) 
+        n_off_1_prec = length(prec_1_x_off) # sum(off_1_tot > 0) 
+        n_off_2_prec = length(prec_2_x_off) # sum(off_2_tot > 0)
         
         count1 = n_arr_1_prec
         count2 = n_arr_2_prec
@@ -348,36 +344,4 @@ for (k in 1:length(adjust_val)) {
     origData = list(str_info = orig_str_info,
                     str_surf = orig_str_surf)
     save(origData, file=paste0("../Output_rev/origGridInfo/origData_", k,".dat"))
-}
-
-
-# arr_1_prec_a = point.in.polygon(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"],
-#                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,1],
-#                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,2])
-# arr_1_prec_b = point.in.polygon(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"],
-#                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
-#                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
-# arr_2_prec_a = point.in.polygon(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"],
-#                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,1],
-#                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,2])
-# arr_2_prec_b = point.in.polygon(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"],
-#                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
-#                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
-# off_1_prec_a = point.in.polygon(dataOff_prec_1[,"x_coord_cd"], dataOff_prec_1[,"y_coord_cd"],
-#                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,1],
-#                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,2])
-# off_1_prec_b = point.in.polygon(dataOff_prec_1[,"x_coord_cd"], dataOff_prec_1[,"y_coord_cd"],
-#                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
-#                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
-# off_2_prec_a = point.in.polygon(dataOff_prec_2[,"x_coord_cd"], dataOff_prec_2[,"y_coord_cd"],
-#                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,1],
-#                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,2])
-# off_2_prec_b = point.in.polygon(dataOff_prec_2[,"x_coord_cd"], dataOff_prec_2[,"y_coord_cd"],
-#                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
-#                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
-# 
-# # Counting the arrests and offenses (precinct specific)
-# n_arr_1_prec = sum(arr_1_prec_a > 0) + sum(arr_1_prec_b > 0)
-# n_arr_2_prec = sum(arr_2_prec_a > 0) + sum(arr_2_prec_b > 0)
-# n_off_1_prec = sum(off_1_prec_a > 0) + sum(off_1_prec_b > 0)
-# n_off_2_prec = sum(off_2_prec_a > 0) + sum(off_2_prec_b > 0)
+# }
