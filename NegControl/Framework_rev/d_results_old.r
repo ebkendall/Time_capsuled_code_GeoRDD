@@ -276,3 +276,121 @@ for(i in 1:8) {
                  ") & (", round(p_global_surf$max[i,7], digits = 3),", ", round(p_global_surf$mean[i,7], digits = 3),
                  ") & (", round(p_global_surf$max[i,8], digits = 3),", ", round(p_global_surf$mean[i,8], digits = 3), ")"))
 }
+
+# Plotting results ------------------------------------------------------------
+library(tidyverse, quietly = T)
+library(gridExtra, quietly = T)
+buff_val = 3:10
+n_buff_width = length(buff_val)
+# Figure of Naive P-val  -------------------------------------------------------
+load(paste0('../Output_tree_rev/origGridInfo/origData_4.dat'))
+unadjPVal = data.frame("p" = na.omit(origData$str_info$naive_pval))
+realData_naive = ggplot(unadjPVal, aes(x=p)) + 
+    geom_histogram(color="black", fill="white", bins = floor(sqrt(nrow(origData$str_info)))) +
+    xlab("P-Values") + 
+    ylab("Frequency") + 
+    ggtitle(paste0("Histogram of p-values at buffer width 600 ft")) + 
+    theme(text = element_text(size=8))
+ggsave(filename = "../Plots_rev/negControl_pval.png", plot = realData_naive, width = 1000, height = 800, units = "px")
+
+load('../Output_tree_rev/origGridInfo/origData_1.dat')
+unadjPValTotal = data.frame(na.omit(origData$str_info$naive_pval))
+for (i in 2:n_buff_width) {
+    load(paste0('../Output_tree_rev/origGridInfo/origData_', i, '.dat'))
+    unadjPValTotal = cbind(unadjPValTotal, data.frame(na.omit(origData$str_info$naive_pval)))
+}
+colnames(unadjPValTotal) = as.character(buff_val)
+
+percRejection = data.frame("perc" = rep(1,length(buff_val)), "buff" = buff_val)
+for (i in 1:length(buff_val)) {
+    percRejection[i,1] = sum(na.omit(unadjPValTotal[,i] < 0.05)) / sum(!is.na(unadjPValTotal[,i]))
+}
+percRejection$buff = as.factor(percRejection$buff)
+
+print(percRejection)
+
+realData_naive_total = ggplot(percRejection, aes(y=perc, x=buff)) + 
+    geom_bar(position="dodge", stat="identity") + 
+    ggtitle("Percentage of p-values less than 0.05") +
+    xlab("Buffer width (100x in ft)") + 
+    ylab("Percent") +
+    ylim(0, 1) +
+    # scale_x_continuous(breaks = pretty(percRejection$buff, n = 8)) +
+    theme(text = element_text(size=8))
+ggsave(filename = "../Plots_rev/negControl_pval_total.png", plot = realData_naive_total, width = 1000, height = 800, units = "px")
+
+# Individual test results ---------------------------------------------------
+i_p = vector(mode = 'list', length = length(buff_val))
+for(b in 1:length(buff_val)) {
+    yVal = perc_rejections_indiv_surf[b,]
+    myData <- data.frame(adjust_val, yVal)
+    
+    myData$adjust_val = as.factor(myData$adjust_val)
+    
+    i_p[[b]] = ggplot(myData, aes(y=yVal, x=adjust_val)) +
+        geom_bar(position="dodge", stat="identity") +
+        labs(title="Percent of p-values less than 0.05 (Arrest Data)",
+             subtitle=paste0("Intensity surface correction, region size = ", b+2, "00 ft"))+
+        xlab("Spatial smoothing multiplier") +
+        ylab("Percent") +
+        ylim(0,1)+
+        # scale_x_continuous(breaks=1:length(adjust_val)) +
+        # scale_y_continuous(breaks = seq(0.1,1,by=0.1)) +
+        geom_hline(yintercept=0.05, linetype="dashed",
+                   color = "red", linewidth = 0.5) +
+        theme(text = element_text(size=8), legend.position="bottom",
+              legend.title=element_blank(),
+              legend.key.height= unit(1, 'mm'),
+              legend.key.width= unit(4, 'mm'),
+              legend.box.margin=margin(-10,-10,-10,-10)) +
+        scale_fill_discrete(name = "P-Value")
+}
+
+pdf("../Plots_rev/int_surface_results.pdf", onefile = T)
+grid.arrange(i_p[[1]], i_p[[2]], i_p[[3]], i_p[[4]], ncol = 2, nrow = 2)
+grid.arrange(i_p[[5]], i_p[[6]], i_p[[7]], i_p[[8]], ncol = 2, nrow = 2)
+dev.off()
+
+ggsave(filename = "../Plots_rev/int_surface_single.png", plot = i_p[[4]], 
+       width = 1000, height = 800, units = "px")
+
+# Global test results ---------------------------------------------------
+global_results_plot = data.frame("adjust" = as.factor(rep(adjust_val, 2)),
+                                 "p" = c(p_global_surf$max[i,], p_global_surf$mean[i,]),
+                                 "test_stat" = as.factor(c(rep("max", length(adjust_val)),
+                                                           rep("mean", length(adjust_val)))))
+
+realData_global_total = ggplot(global_results_plot, aes(y=p, x=adjust, fill = test_stat)) +
+    geom_bar(position="dodge", stat="identity") +
+    ggtitle("P-Values for global test") +
+    xlab("Spatial smoothing multiplier") +
+    ylab("P-Value") +
+    geom_hline(yintercept=0.05, linetype="dashed",
+               color = "red", linewidth = 0.5) +
+    scale_fill_manual(name="Test statistic",
+                      labels=c("max", "mean"),
+                      values = c("#F8766D", "#00BFC4")) +
+    theme(text = element_text(size=8),
+          legend.title = element_text(size=5),
+          legend.text = element_text(size=5),
+          legend.key.size = unit(0.25, 'cm'))
+
+ggsave(filename = "../Plots_rev/realData_global_total_surf.png", plot = realData_global_total, width = 1000, height = 800, units = "px")
+
+
+# # Histograms for global test -------------------------------------------
+# globalEmpDist = data.frame("num" = global_null_plot)
+# g_plot_max = ggplot(globalEmpDist, aes(x=num)) +
+#     geom_histogram(color="black", fill="white", bins = floor(sqrt(nrow(globalEmpDist)))) +
+#     geom_vline(data=globalObsVal, aes(xintercept=obs, color="red"), size=1) +
+#     ggtitle(paste0("Distr. of global test stat. (smoothing mult. = ", adjust_val[kk], ")")) +
+#     xlab("Test statistic") +
+#     ylab("Frequency") +
+#     theme(legend.position="none", text = element_text(size=6)) +
+#     theme(plot.margin = unit(c(.2,.2,.2,.2), "mm")) +
+#     theme(axis.title.x = element_text(vjust=2)) +
+#     theme(plot.title = element_text(vjust=-2))
+# 
+# realData_global_sep_surf = grid.arrange(g_plots_surf[[2]][[2]], g_plots_surf[[2]][[4]], g_plots_surf[[2]][[5]], nrow = 3)
+# ggsave(filename = "Plots/realData_global_sep_surf.png", plot = realData_global_sep_surf, width = 1000, height = 800, units = "px")
+

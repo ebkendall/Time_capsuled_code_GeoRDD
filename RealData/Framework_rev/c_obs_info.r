@@ -299,23 +299,23 @@ same_sig = T
         }
         
         # Naive p-value (precinct specific) info  -----------------------------
-        # arr_1_prec_a = point.in.polygon(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"],
-        #                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,1],
-        #                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,2])
-        # arr_1_prec_b = point.in.polygon(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"],
-        #                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
-        #                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
-        # arr_2_prec_a = point.in.polygon(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"],
-        #                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,1],
-        #                                 poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,2])
-        # arr_2_prec_b = point.in.polygon(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"],
-        #                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
-        #                                 poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
+        arr_1_prec_a = point.in.polygon(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"],
+                                        poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,1],
+                                        poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,2])
+        arr_1_prec_b = point.in.polygon(dataArr_prec_1[,"x_coord_cd"], dataArr_prec_1[,"y_coord_cd"],
+                                        poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
+                                        poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
+        arr_2_prec_a = point.in.polygon(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"],
+                                        poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,1],
+                                        poly1@polygons[[1]]@Polygons[[poly_ind1]]@coords[,2])
+        arr_2_prec_b = point.in.polygon(dataArr_prec_2[,"x_coord_cd"], dataArr_prec_2[,"y_coord_cd"],
+                                        poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,1],
+                                        poly2@polygons[[1]]@Polygons[[poly_ind2]]@coords[,2])
         
-        n_arr_1_prec = length(prec_1_x) # sum(arr_1_prec_a > 0) + sum(arr_1_prec_b > 0) 
-        n_arr_2_prec = length(prec_2_x) # sum(arr_2_prec_a > 0) + sum(arr_2_prec_b > 0) 
-        n_off_1_prec = length(prec_1_x_off) # sum(off_1_tot > 0) 
-        n_off_2_prec = length(prec_2_x_off) # sum(off_2_tot > 0)
+        n_arr_1_prec = sum(arr_1_prec_a > 0) + sum(arr_1_prec_b > 0) # length(prec_1_x) 
+        n_arr_2_prec = sum(arr_2_prec_a > 0) + sum(arr_2_prec_b > 0) # length(prec_2_x) 
+        n_off_1_prec = sum(off_1_tot > 0) # length(prec_1_x_off)
+        n_off_2_prec = sum(off_2_tot > 0) # length(prec_2_x_off) 
         
         count1 = n_arr_1_prec
         count2 = n_arr_2_prec
