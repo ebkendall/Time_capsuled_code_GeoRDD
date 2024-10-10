@@ -18,6 +18,7 @@ global_results[[1]] = global_results[[2]] = global_results[[3]] =
 names(global_results) = c("max", "mean", "median")
 
 for(k in 1:n_buff_width) {
+    print(paste0("Buffer ", k+2))
     m_theta = match_count_list[k,"theta"]
     m_tau = match_count_list[k,"tau"]
     
@@ -149,9 +150,9 @@ for(k in 1:n_buff_width) {
         }
         
     }
-    print(paste0("Buffer ", k+2))
-    print("Theta matches")
-    print(summary(num_possible_match))
+    
+    # print("Theta matches")
+    # print(summary(num_possible_match))
     
     for (jj in 1:nrow(X_theta)) {
         indPvalue_theta[jj] = mean(store_theta[jj,] > Y_theta[jj])
@@ -226,10 +227,10 @@ for(k in 1:n_buff_width) {
             
         }
         
-        if(kk == 1) {
-            print("Tau matches")
-            print(summary(num_possible_match))
-        }
+        # if(kk == 1) {
+        #     print("Tau matches")
+        #     print(summary(num_possible_match))
+        # }
         
         for (jj in 1:nrow(Xtest)) {
             indPvalue[jj,kk] = mean(store[jj,,kk] > Ytest[jj])
@@ -256,3 +257,31 @@ print(global_results_theta)
 print("Tau")
 print(indiv_results)
 print(global_results)
+
+print("Individual test results ---------------------------------------------")
+print("Buffer & theta & tau")
+for(i in 1:8) {
+    print(paste0(i+2, "00ft & ", round(indiv_results_theta[i], digits = 4),
+                 " & ", round(indiv_results[i,1], digits = 4),
+                 " & ", round(indiv_results[i,2], digits = 4),
+                 " & ", round(indiv_results[i,3], digits = 4),
+                 " & ", round(indiv_results[i,4], digits = 4),
+                 " & ", round(indiv_results[i,5], digits = 4),
+                 " & ", round(indiv_results[i,6], digits = 4),
+                 " & ", round(indiv_results[i,7], digits = 4),
+                 " & ", round(indiv_results[i,8], digits = 4)))
+}
+
+print("Global test results -------------------------------------------------")
+print("Buffer & theta & tau")
+for(i in 1:8) {
+    print(paste0(i+2, "00ft & (", round(global_results_theta[i,1], digits = 3), ", ", round(global_results_theta[i,2], digits = 3),
+                 ") & (", round(global_results$max[i,1], digits = 3),", ", round(global_results$mean[i,1], digits = 3),
+                 ") & (", round(global_results$max[i,2], digits = 3),", ", round(global_results$mean[i,2], digits = 3),
+                 ") & (", round(global_results$max[i,3], digits = 3),", ", round(global_results$mean[i,3], digits = 3),
+                 ") & (", round(global_results$max[i,4], digits = 3),", ", round(global_results$mean[i,4], digits = 3),
+                 ") & (", round(global_results$max[i,5], digits = 3),", ", round(global_results$mean[i,5], digits = 3),
+                 ") & (", round(global_results$max[i,6], digits = 3),", ", round(global_results$mean[i,6], digits = 3),
+                 ") & (", round(global_results$max[i,7], digits = 3),", ", round(global_results$mean[i,7], digits = 3),
+                 ") & (", round(global_results$max[i,8], digits = 3),", ", round(global_results$mean[i,8], digits = 3), ")"))
+}

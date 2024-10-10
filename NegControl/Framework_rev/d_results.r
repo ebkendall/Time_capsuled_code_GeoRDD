@@ -197,3 +197,32 @@ print(global_results_theta)
 print("Tau")
 print(indiv_results)
 print(global_results)
+
+
+print("Individual test results ---------------------------------------------")
+print("Buffer & theta & tau")
+for(i in 1:8) {
+    print(paste0(i+2, "00ft & ", round(indiv_results_theta[i], digits = 4),
+                 " & ", round(indiv_results[i,1], digits = 4),
+                 " & ", round(indiv_results[i,2], digits = 4),
+                 " & ", round(indiv_results[i,3], digits = 4),
+                 " & ", round(indiv_results[i,4], digits = 4),
+                 " & ", round(indiv_results[i,5], digits = 4),
+                 " & ", round(indiv_results[i,6], digits = 4),
+                 " & ", round(indiv_results[i,7], digits = 4),
+                 " & ", round(indiv_results[i,8], digits = 4)))
+}
+
+print("Global test results -------------------------------------------------")
+print("Buffer & theta & tau")
+for(i in 1:8) {
+    print(paste0(i+2, "00ft & (", round(global_results_theta[i,1], digits = 3), ", ", round(global_results_theta[i,2], digits = 3),
+                 ") & (", round(global_results$max[i,1], digits = 3),", ", round(global_results$mean[i,1], digits = 3),
+                 ") & (", round(global_results$max[i,2], digits = 3),", ", round(global_results$mean[i,2], digits = 3),
+                 ") & (", round(global_results$max[i,3], digits = 3),", ", round(global_results$mean[i,3], digits = 3),
+                 ") & (", round(global_results$max[i,4], digits = 3),", ", round(global_results$mean[i,4], digits = 3),
+                 ") & (", round(global_results$max[i,5], digits = 3),", ", round(global_results$mean[i,5], digits = 3),
+                 ") & (", round(global_results$max[i,6], digits = 3),", ", round(global_results$mean[i,6], digits = 3),
+                 ") & (", round(global_results$max[i,7], digits = 3),", ", round(global_results$mean[i,7], digits = 3),
+                 ") & (", round(global_results$max[i,8], digits = 3),", ", round(global_results$mean[i,8], digits = 3), ")"))
+}

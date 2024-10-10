@@ -81,8 +81,8 @@ load("../Data/indexList_MAIN.RData")
 load("../../NegControl/Output_tree_rev/match_count_list.dat")
 n_buff_width = 8
 
-for(trialNum in 1:1000) {
-    # trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
+# for(trialNum in 1:1000) {
+    trialNum = as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID'))
     set.seed(trialNum)
     
     file_names <- c(paste0("../Data/Surfaces/gridPointValues_hotspot_", trialNum,".rda"),
@@ -224,38 +224,38 @@ for(trialNum in 1:1000) {
     
     save(indiv_results_theta, file = paste0('../Output_noWater_rev/test_results/indiv_test_', trialNum, '.rda'))
     save(global_results_theta, file = paste0('../Output_noWater_rev/test_results/global_test_', trialNum, '.rda'))
-}
+# }
     
 
 all_indiv = array(NA, dim=c(1000, n_buff_width, 4))
 
 all_global = vector(mode = 'list', length = 4)
-all_global[[1]] = all_global[[2]] = 
+all_global[[1]] = all_global[[2]] =
     all_global[[3]] = all_global[[4]] = vector(mode = 'list', length = 8)
 
 for(t in 1:1000) {
-    
+
     load(paste0('../Output_noWater_rev/test_results/indiv_test_', t, '.rda'))
     all_indiv[t,,] = indiv_results_theta
-    
+
     load(paste0('../Output_noWater_rev/test_results/global_test_', t, '.rda'))
-    
+
     for(i in 1:4) {
         for(j in 1:8) {
             all_global[[i]][[j]] = rbind(all_global[[i]][[j]],
                                          global_results_theta[[i]][j,,drop = F])
         }
     }
-    
+
 }
 
 print("Individual Results")
 avg_perc_rej = apply(all_indiv, 2:3, mean)
 for(j in 1:8) {
-    print(paste0((j+2)*100, " & ", round(avg_perc_rej[j,2], 3), 
-                            " & ", round(avg_perc_rej[j,3], 3), 
-                            " & ", round(avg_perc_rej[j,4], 3),
-                            " & ", round(avg_perc_rej[j,1], 3)))
+    print(paste0((j+2)*100, "ft & ", round(avg_perc_rej[j,2], 3),
+                 " & ", round(avg_perc_rej[j,3], 3),
+                 " & ", round(avg_perc_rej[j,4], 3),
+                 " & ", round(avg_perc_rej[j,1], 3)))
 }
 
 print("Global Results")
@@ -264,17 +264,14 @@ for(j in 1:8) {
     perc_rej_j = c(perc_rej_j, apply(all_global[[3]][[j]], 2, function(x){mean(x < 0.05)}))
     perc_rej_j = c(perc_rej_j, apply(all_global[[4]][[j]], 2, function(x){mean(x < 0.05)}))
     perc_rej_j = c(perc_rej_j, apply(all_global[[1]][[j]], 2, function(x){mean(x < 0.05)}))
-    
-    print(paste0((j+2)*100, " & (", round(perc_rej_j[1], 3), ", ", 
-                                    round(perc_rej_j[2], 3), ", ",
-                                    round(perc_rej_j[3], 3), ") & (",
-                                    round(perc_rej_j[4], 3), ", ", 
-                                    round(perc_rej_j[5], 3), ", ",
-                                    round(perc_rej_j[6], 3), ") & (",
-                                    round(perc_rej_j[7], 3), ", ", 
-                                    round(perc_rej_j[8], 3), ", ",
-                                    round(perc_rej_j[9], 3), ") & (",
-                                    round(perc_rej_j[10], 3), ", ", 
-                                    round(perc_rej_j[11], 3), ", ",
-                                    round(perc_rej_j[12], 3), ")"))
+
+    print(paste0((j+2)*100, "ft & (", round(perc_rej_j[1], 3), ", ",
+                 round(perc_rej_j[2], 3), ") & (",
+                 round(perc_rej_j[4], 3), ", ",
+                 round(perc_rej_j[5], 3), ") & (",
+                 round(perc_rej_j[7], 3), ", ",
+                 round(perc_rej_j[8], 3), ") & (",
+                 round(perc_rej_j[10], 3), ", ",
+                 round(perc_rej_j[11], 3), ")"))
 }
+

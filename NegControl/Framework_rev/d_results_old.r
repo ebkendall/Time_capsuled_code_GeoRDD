@@ -3,7 +3,7 @@ options(warn=1)
 load("../Data/indexList_MAIN.RData")
 n_buff_width = 8
 adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
-load("../../NegControl/Output_tree_rev/match_count_list_old.dat")
+load("../Output_tree_rev/match_count_list_old.dat")
 
 perc_rejections_indiv = rep(NA, n_buff_width)
 perc_rejections_indiv_surf = matrix(nrow = n_buff_width, ncol = length(adjust_val))
@@ -18,8 +18,8 @@ p_global_surf[[1]] = p_global_surf[[2]] =
     p_global_surf[[3]] = matrix(nrow = n_buff_width, ncol = length(adjust_val))
 
 for(k in 1:n_buff_width) {
-    load(paste0('../Output_rev/nullGridInfo/combinedMatchingSetup', k, ".dat"))
-    load(paste0('../Output_rev/origGridInfo/origData_', k, '.dat'))
+    load(paste0('../Output_tree_rev/nullGridInfo/combinedMatchingSetup', k, ".dat"))
+    load(paste0('../Output_tree_rev/origGridInfo/origData_', k, '.dat'))
     
     ## Now remove data points where these ratios are much different
     area_ratio = c(na.omit(origData$str_info$area1 / origData$str_info$area2))
@@ -40,63 +40,37 @@ for(k in 1:n_buff_width) {
     
     combinedMatchingSetupFix2 = combinedMatchingSetupFix$DATA[wRatioOk,]
     int_surface_info = combinedMatchingSetupFix$INT_SURFACE[wRatioOk,]
-    off_surface_info = combinedMatchingSetupFix$OFF_SURFACE[wRatioOk,]
-    
-    # Wherever there is a 0 for the offense count, everything gets scaled by 1
-    which_zeros = which(combinedMatchingSetupFix2$n_off_1 == 0 | combinedMatchingSetupFix2$n_off_2 == 0)
-    combinedMatchingSetupFix2$n_arr_1[which_zeros] = combinedMatchingSetupFix2$n_arr_1[which_zeros] + 1 
-    combinedMatchingSetupFix2$n_arr_2[which_zeros] = combinedMatchingSetupFix2$n_arr_2[which_zeros] + 1 
-    combinedMatchingSetupFix2$n_off_1[which_zeros] = combinedMatchingSetupFix2$n_off_1[which_zeros] + 1 
-    combinedMatchingSetupFix2$n_off_2[which_zeros] = combinedMatchingSetupFix2$n_off_2[which_zeros] + 1
-    
-    which_zeros_orig = which(origData$str_info$n_off_1_prec == 0 | origData$str_info$n_off_2_prec == 0)
-    origData$str_info$n_arr_1_prec[which_zeros_orig] = origData$str_info$n_arr_1_prec[which_zeros_orig] + 1
-    origData$str_info$n_arr_2_prec[which_zeros_orig] = origData$str_info$n_arr_2_prec[which_zeros_orig] + 1
-    origData$str_info$n_off_1_prec[which_zeros_orig] = origData$str_info$n_off_1_prec[which_zeros_orig] + 1
-    origData$str_info$n_off_2_prec[which_zeros_orig] = origData$str_info$n_off_2_prec[which_zeros_orig] + 1
-    
-    # # Check no zeros for observed boundaries
-    # which_zeros_orig = which(origData$str_info$n_off_1_prec == 0 | origData$str_info$n_off_2_prec == 0)
-    # if(length(which_zeros_orig) > 0) print(paste0("Zeroes on offenses ", k))
-    # 
-    # # Remove zeros from the null streets
-    # which_zeros = which(combinedMatchingSetupFix2$n_off_1 == 0 | combinedMatchingSetupFix2$n_off_2 == 0)
-    # combinedMatchingSetupFix2 = combinedMatchingSetupFix2[-which_zeros, ]
-    # int_surface_info = int_surface_info[-which_zeros, ]
-    # off_surface_info = off_surface_info[-which_zeros, ]
     
     # Null locations
-    null_sum = combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2
-    null_ratio = combinedMatchingSetupFix2$n_off_1 / combinedMatchingSetupFix2$n_off_2
+    null_sum = combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2
+    null_ratio = combinedMatchingSetupFix2$streets1 / combinedMatchingSetupFix2$streets2
     null_ratio[null_ratio < 1] = 1 / null_ratio[null_ratio < 1]
     
     sd1 = sd(null_sum, na.rm = T)
     sd2 = sd(null_ratio, na.rm = T)
     
     # Observed locations
-    obs_sum = origData$str_info$n_off_1_prec[indexList_MAIN] + origData$str_info$n_off_2_prec[indexList_MAIN]
-    obs_ratio = origData$str_info$n_off_1_prec[indexList_MAIN] / origData$str_info$n_off_2_prec[indexList_MAIN]
+    obs_sum = origData$str_info$streets1[indexList_MAIN] + origData$str_info$streets2[indexList_MAIN]
+    obs_ratio = origData$str_info$streets1[indexList_MAIN] / origData$str_info$streets2[indexList_MAIN]
     obs_ratio[obs_ratio < 1] = 1 / obs_ratio[obs_ratio < 1]
     
     sd1_obs = sd(obs_sum, na.rm = T)
     sd2_obs = sd(obs_ratio, na.rm = T)
     
     # Test statistics: Theta
-    t_stat = abs(combinedMatchingSetupFix2$n_arr_1 / combinedMatchingSetupFix2$n_off_1
-                 - combinedMatchingSetupFix2$n_arr_2 / combinedMatchingSetupFix2$n_off_2)
-    t_stat_orig = abs(origData$str_info$n_arr_1_prec / origData$str_info$n_off_1_prec
-                      - origData$str_info$n_arr_2_prec / origData$str_info$n_off_2_prec)
+    t_stat = abs(combinedMatchingSetupFix2$count1 / combinedMatchingSetupFix2$streets1
+                 - combinedMatchingSetupFix2$count2 / combinedMatchingSetupFix2$streets2)
+    t_stat_orig = abs(origData$str_info$count1 / origData$str_info$streets1
+                      - origData$str_info$count2 / origData$str_info$streets2)
     
     # Test statistics: Tau (NEW)
-    t_stat_int_surface = int_surface_info
-    t_stat_off_surface = off_surface_info
-    t_stat_int_surface_orig = origData$str_surf$INT_SURFACE
-    t_stat_off_surface_orig = origData$str_surf$OFF_SURFACE
+    t_stat_int_surface = int_surface_info[,3*(1:8)]
+    t_stat_int_surface_orig = origData$str_surf$INT_SURFACE[,3*(1:8)]
     
     pval = rep(NA, nrow(origData$str_info))
     pval_int = matrix(NA, nrow = nrow(origData$str_info), ncol = length(adjust_val))
     
-    match_vec = match_count_list[k,]
+    match_vec = match_count_list[k, ]
     global_null = matrix(nrow = 164, ncol = match_vec[1])
     global_null_int_surf= vector(mode = 'list', length = length(adjust_val))
     for(jj in 1:length(adjust_val)) {
@@ -108,9 +82,9 @@ for(k in 1:n_buff_width) {
     
     for(ii in indexList_MAIN) {
         ## find matches
-        off_temp = origData$str_info$n_off_1_prec[ii] + origData$str_info$n_off_2_prec[ii]
-        ratio_temp = max(origData$str_info$n_off_1_prec[ii] / origData$str_info$n_off_2_prec[ii],
-                         origData$str_info$n_off_2_prec[ii] / origData$str_info$n_off_1_prec[ii])
+        off_temp = origData$str_info$streets1[ii] + origData$str_info$streets2[ii]
+        ratio_temp = max(origData$str_info$streets1[ii] / origData$str_info$streets2[ii],
+                         origData$str_info$streets2[ii] / origData$str_info$streets1[ii])
         
         # Remove relatively extreme values to improve the mahalanobis distance
         remove_extreme1 = which((null_sum > (0.25)*off_temp) & (null_sum < (1/0.25)*off_temp))
@@ -121,13 +95,13 @@ for(k in 1:n_buff_width) {
         null_ratio_ii = null_ratio[remove_extreme]
         t_stat_ii = t_stat[remove_extreme]
         t_stat_int_surface_ii = t_stat_int_surface[remove_extreme, ]
-        t_stat_off_surface_ii = t_stat_off_surface[remove_extreme, ]
         v1_ii = sd(null_sum_ii, na.rm = T)^2
         v2_ii = sd(null_ratio_ii, na.rm = T)^2
         null_str_position_ii = null_str_position[remove_extreme, ]
         
         
         dist_temp = sqrt(((off_temp - null_sum_ii)^2/v1_ii) + ((ratio_temp - null_ratio_ii)^2 / v2_ii))
+        if(length(dist_temp) < 20) next
         
         w50 = order(dist_temp)[1:match_vec[1]]
         
@@ -141,11 +115,9 @@ for(k in 1:n_buff_width) {
         
         for(kk in 1:length(adjust_val)) {
             w50_k = order(dist_temp)[1:match_vec[2]]
-            null_dist_int = abs(t_stat_int_surface_ii[w50_k, 3*kk-2] / t_stat_off_surface_ii[w50_k, 3*kk-2]
-                                - t_stat_int_surface_ii[w50_k, 3*kk-1] / t_stat_off_surface_ii[w50_k, 3*kk-1])
+            null_dist_int = t_stat_int_surface_ii[w50_k,kk]
             global_null_int_surf[[kk]][ii, ] = null_dist_int
-            t_stat_int_surf_orig_kk = abs(t_stat_int_surface_orig[ii,3*kk-2] / t_stat_off_surface_orig[ii,3*kk-2] -
-                                              t_stat_int_surface_orig[ii,3*kk-1] / t_stat_off_surface_orig[ii,3*kk-1])
+            t_stat_int_surf_orig_kk = t_stat_int_surface_orig[ii,kk]
             
             pval_int[ii, kk] = mean(null_dist_int > t_stat_int_surf_orig_kk, na.rm=TRUE)
         }
@@ -181,9 +153,12 @@ for(k in 1:n_buff_width) {
         # This is the repetition to get the null distribution
         temp_loc = temp_max = rep(NA, 164)
         for(ii in indexList_MAIN) {
+            # if(ii%in% which_zeros_orig) next
             rand_ind = sample(c(1:match_vec[1]), 1)
             temp_max[ii] = global_null[ii, rand_ind]
             temp_loc[ii] = rand_ind
+            # temp_max[ii] = sample(x = global_samp[[ii]][,"w50_tstat"], size = 1,
+            #                          prob = global_samp[[ii]][,"w50_prob"])
         }
         global_t_stat[rep, 1] = max(temp_max, na.rm = T)
         global_t_stat[rep, 2] = mean(temp_max, na.rm = T)
@@ -216,9 +191,12 @@ for(k in 1:n_buff_width) {
             # This is the repetition to get the null distribution
             temp_loc = temp_max = rep(NA, 164)
             for(ii in indexList_MAIN) {
+                # if(ii%in% which_zeros_orig) next
                 rand_ind = sample(c(1:match_vec[2]), 1)
                 temp_max[ii] = global_null_int_surf[[av]][ii, rand_ind]
                 temp_loc[ii] = rand_ind
+                # temp_max[ii] = sample(x = global_samp_int_surf[[av]][[ii]][,"w50_tstat"], size = 1,
+                #                          prob = global_samp_int_surf[[av]][[ii]][,"w50_prob"])
             }
             temp_loc_max = cbind(1:164, temp_loc, temp_max)
             temp_loc_max = temp_loc_max[indexList_MAIN, ]
@@ -240,20 +218,15 @@ for(k in 1:n_buff_width) {
     global_match_loc_orig = rep(NA, length(adjust_val))
     
     for(av in 1:length(adjust_val)) {
-        t_stat_scale = abs(t_stat_int_surface_orig[,3*av-2] / t_stat_off_surface_orig[,3*av-2] -
-                            t_stat_int_surface_orig[,3*av-1] / t_stat_off_surface_orig[,3*av-1])
         for(m in 1:3) {
             if(m == 1) {
-                # t_stat_kk = max(t_stat_int_surface_orig[,av], na.rm = T)
-                t_stat_kk = max(t_stat_scale, na.rm = T)
+                t_stat_kk = max(t_stat_int_surface_orig[,av], na.rm = T)
                 global_null_kk = global_t_stat_int_surf[[av]]$max_t_stat
             } else if(m == 2) {
-                # t_stat_kk = mean(t_stat_int_surface_orig[,av], na.rm = T)
-                t_stat_kk = mean(t_stat_scale, na.rm = T)
+                t_stat_kk = mean(t_stat_int_surface_orig[,av], na.rm = T)
                 global_null_kk = global_t_stat_int_surf[[av]]$mean_t_stat
             } else {
-                # t_stat_kk = median(t_stat_int_surface_orig[,av], na.rm = T)
-                t_stat_kk = median(t_stat_scale, na.rm = T)
+                t_stat_kk = median(t_stat_int_surface_orig[,av], na.rm = T)
                 temp_orig = cbind(1:164, t_stat_int_surface_orig[,av])
                 temp_orig = temp_orig[indexList_MAIN, ]
                 temp_orig = temp_orig[order(abs(temp_orig[,2] - t_stat_kk)), ]
@@ -279,14 +252,14 @@ print("Individual test results ---------------------------------------------")
 print("Buffer & theta & tau")
 for(i in 1:8) {
     print(paste0(i+2, "00ft & ", round(perc_rejections_indiv[i], digits = 4),
-                 " & ", round(perc_rejections_indiv_surf[i,1], digits = 4),
-                 " & ", round(perc_rejections_indiv_surf[i,2], digits = 4),
-                 " & ", round(perc_rejections_indiv_surf[i,3], digits = 4),
-                 " & ", round(perc_rejections_indiv_surf[i,4], digits = 4),
-                 " & ", round(perc_rejections_indiv_surf[i,5], digits = 4),
-                 " & ", round(perc_rejections_indiv_surf[i,6], digits = 4),
-                 " & ", round(perc_rejections_indiv_surf[i,7], digits = 4),
-                 " & ", round(perc_rejections_indiv_surf[i,8], digits = 4)))
+                " & ", round(perc_rejections_indiv_surf[i,1], digits = 4),
+                " & ", round(perc_rejections_indiv_surf[i,2], digits = 4),
+                " & ", round(perc_rejections_indiv_surf[i,3], digits = 4),
+                " & ", round(perc_rejections_indiv_surf[i,4], digits = 4),
+                " & ", round(perc_rejections_indiv_surf[i,5], digits = 4),
+                " & ", round(perc_rejections_indiv_surf[i,6], digits = 4),
+                " & ", round(perc_rejections_indiv_surf[i,7], digits = 4),
+                " & ", round(perc_rejections_indiv_surf[i,8], digits = 4)))
 }
 
 print("Global test results -------------------------------------------------")
