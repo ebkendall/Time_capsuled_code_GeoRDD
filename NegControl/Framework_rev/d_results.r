@@ -3,24 +3,20 @@ options(warn=1)
 load("../Data/indexList_MAIN.RData")
 load("../Output_tree_rev/match_count_list.dat")
 n_buff_width = 8
-adjust_val = c(0.5, 1, 1.5, 2, 3, 4, 6, 10)
+adjust_val = c(0.5, 1, 1.5, 2, 3, 4)
 
 # Theta ------------------------------------------------------------------------
 indiv_results_theta = rep(NA, n_buff_width)
-global_results_theta = matrix(NA, nrow = n_buff_width, ncol = 3)
-colnames(global_results_theta) = c("max", "mean", "median")
+global_results_theta = matrix(NA, nrow = n_buff_width, ncol = 2)
+colnames(global_results_theta) = c("max", "mean")
 
 # Tau --------------------------------------------------------------------------
-indiv_results = matrix(NA, nrow = n_buff_width, ncol = length(adjust_val))
-global_results = vector(mode = 'list', length = 3)
-global_results[[1]] = global_results[[2]] = global_results[[3]] = 
-    matrix(NA, nrow = n_buff_width, ncol = length(adjust_val))
-names(global_results) = c("max", "mean", "median")
+indiv_results = rep(NA, length(adjust_val))
+global_results = matrix(NA, nrow = length(adjust_val), ncol = 2)
+colnames(global_results) = c("max", "mean")
 
 for(k in 1:n_buff_width) {
-    print(k)
-    m_theta = match_count_list[k,"theta"]
-    m_tau = match_count_list[k,"tau"]
+    print(paste0("Buffer ", k+2))
     
     load(paste0('../Output_tree_rev/nullGridInfo/combinedMatchingSetup', k, ".dat"))
     load(paste0('../Output_tree_rev/origGridInfo/origData_', k, '.dat'))
@@ -58,13 +54,11 @@ for(k in 1:n_buff_width) {
     rat_off = combinedMatchingSetupFix2$streets1 / combinedMatchingSetupFix2$streets2
     rat_off[rat_off < 1] = 1 / rat_off[rat_off < 1]
    
-    n_null = nrow(combinedMatchingSetupFix2)
     n_matches = 2000
     
     # Theta --------------------------------------------------------------------
-    store_theta = matrix(NA, nrow = length(indexList_MAIN), ncol = n_matches)
     indPvalue_theta = rep(NA, length(indexList_MAIN))
-    globalPvalue_theta = rep(NA, 3)
+    globalPvalue_theta = rep(NA, 2)
     Y_theta = rep(NA, length(indexList_MAIN))
     X_theta = matrix(NA, length(indexList_MAIN), 2)
     
@@ -81,30 +75,50 @@ for(k in 1:n_buff_width) {
         counter = counter + 1
     }
     
-    for(ii in 1:nrow(X_theta)) {
-        
-        off_temp = X_theta[ii,2]
-        ratio_temp = X_theta[ii,1]
-        
-        w1 = which((combinedMatchingSetupFix2$streets1 + 
-                        combinedMatchingSetupFix2$streets2) > m_theta*off_temp &
-                       (combinedMatchingSetupFix2$streets1 + 
-                            combinedMatchingSetupFix2$streets2) < (1/m_theta)*off_temp)
-        
-        w2 = which(rat_off > m_theta*ratio_temp &
-                       rat_off < (1/m_theta)*ratio_temp)
-        
-        wAll = intersect(w1, w2)
-        
-        if (length(wAll) > 10) {
+    m_theta = match_count_list[["theta"]][k]
+    store_theta = NULL
+    repeat {
+        total_match = rep(0, nrow(X_theta))
+        store_theta = matrix(NA, nrow = length(indexList_MAIN), ncol = n_matches)
+        for(ii in 1:nrow(X_theta)) {
             
-            testStatsNULL = t_stat[wAll]
+            off_temp = X_theta[ii,2]
+            ratio_temp = X_theta[ii,1]
             
-            testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
+            w1 = which((combinedMatchingSetupFix2$streets1 + 
+                            combinedMatchingSetupFix2$streets2) > m_theta*off_temp &
+                           (combinedMatchingSetupFix2$streets1 + 
+                                combinedMatchingSetupFix2$streets2) < (1/m_theta)*off_temp)
             
-            store_theta[ii,] = sample(testStatsNULL, n_matches, replace=TRUE)
+            w2 = which(rat_off > m_theta*ratio_temp &
+                           rat_off < (1/m_theta)*ratio_temp)
+            
+            w3 = which(is.finite(t_stat))
+            
+            wAll = intersect(w1, w2)
+            wAll = intersect(wAll, w3)
+            
+            total_match[ii] = length(wAll)
+            
+            if (length(wAll) > 10) {
+                
+                testStatsNULL = t_stat[wAll]
+                
+                testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
+                
+                store_theta[ii,] = sample(testStatsNULL, n_matches, replace=TRUE)
+            }
         }
         
+        # Ensure that at least 75% of the observed boundaries have more than 10 matches
+        if(summary(total_match)[2] > 10) {
+            break
+        } else {
+            print("Need more matches (theta)!")
+            print(paste0("Current perc = ", m_theta))
+            print(summary(total_match))
+            m_theta = m_theta - 0.01
+        }
     }
     
     for (jj in 1:nrow(X_theta)) {
@@ -115,81 +129,95 @@ for(k in 1:n_buff_width) {
                                   max(Y_theta, na.rm=TRUE))
     globalPvalue_theta[2] = mean(apply(store_theta, 2, mean, na.rm=TRUE) > 
                                   mean(Y_theta, na.rm=TRUE))
-    globalPvalue_theta[3] = mean(apply(store_theta, 2, median, na.rm=TRUE) > 
-                                  median(Y_theta, na.rm=TRUE))
     
     indiv_results_theta[k] = mean(indPvalue_theta < .05, na.rm=TRUE)
     global_results_theta[k,] = globalPvalue_theta
 
     # Tau ----------------------------------------------------------------------
-    store = array(NA, dim=c(length(indexList_MAIN), n_matches, length(adjust_val)))
-    
-    indPvalue = matrix(NA, length(indexList_MAIN), length(adjust_val))
-    YtestSave = matrix(NA, length(indexList_MAIN), length(adjust_val))
-    globalPvalue = matrix(NA, 3, length(adjust_val))
-    
-    for (kk in 1:length(adjust_val)) {
-        
-        Ytest = rep(NA, length(indexList_MAIN))
-        Xtest = matrix(NA, length(indexList_MAIN), 2)
-        
-        counter = 1
-        for(ii in indexList_MAIN) {
+    # use region of 600 ft for all computations for tau
+    if(k == 4) {
+        print("Tau")
+        for (kk in 1:length(adjust_val)) {
+            print(paste0("kk ", kk))
             
-            off_temp = origData$str_info$streets1[ii] + origData$str_info$streets2[ii]
-            ratio_temp = max(origData$str_info$streets1[ii] / origData$str_info$streets2[ii],
-                            origData$str_info$streets2[ii] / origData$str_info$streets1[ii])
+            indPvalue = rep(NA, length(indexList_MAIN))
+            globalPvalue = rep(NA, 2)
             
-            Ytest[counter] = origData$str_surf$INT_SURFACE[ii,kk*3]
-            Xtest[counter,] = c(ratio_temp, off_temp)
+            Ytest = rep(NA, length(indexList_MAIN))
+            Xtest = matrix(NA, length(indexList_MAIN), 2)
             
-            counter = counter + 1
-        }
-        
-        YtestSave[,kk] = Ytest
-        
-        for(ii in 1:nrow(Xtest)) {
-            
-            off_temp = Xtest[ii,2]
-            ratio_temp = Xtest[ii,1]
-            
-            w1 = which((combinedMatchingSetupFix2$streets1 + 
-                  combinedMatchingSetupFix2$streets2) > m_tau*off_temp &
-                 (combinedMatchingSetupFix2$streets1 + 
-                    combinedMatchingSetupFix2$streets2) < (1/m_tau)*off_temp)
-    
-            w2 = which(rat_off > m_tau*ratio_temp &
-                        rat_off < (1/m_tau)*ratio_temp)
-            
-            wAll = intersect(w1, w2)
-            
-            if (length(wAll) > 10) {
+            counter = 1
+            for(ii in indexList_MAIN) {
                 
-                testStatsNULL = t_stat_int_surface[wAll, kk]
+                off_temp = origData$str_info$streets1[ii] + origData$str_info$streets2[ii]
+                ratio_temp = max(origData$str_info$streets1[ii] / origData$str_info$streets2[ii],
+                                 origData$str_info$streets2[ii] / origData$str_info$streets1[ii])
                 
-                testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
+                Ytest[counter] = t_stat_int_surface_orig[ii,kk]
+                Xtest[counter,] = c(ratio_temp, off_temp)
                 
-                store[ii,,kk] = sample(testStatsNULL, n_matches, replace=TRUE)
+                counter = counter + 1
             }
             
+            m_tau = match_count_list[["tau"]][kk]
+            store = NULL
+            repeat {
+                total_match = rep(0, nrow(Xtest))
+                store = matrix(NA, nrow = length(indexList_MAIN), ncol = n_matches)
+                for(ii in 1:nrow(Xtest)) {
+                    
+                    off_temp = Xtest[ii,2]
+                    ratio_temp = Xtest[ii,1]
+                    
+                    w1 = which((combinedMatchingSetupFix2$streets1 + 
+                                    combinedMatchingSetupFix2$streets2) > m_tau*off_temp &
+                                   (combinedMatchingSetupFix2$streets1 + 
+                                        combinedMatchingSetupFix2$streets2) < (1/m_tau)*off_temp)
+                    
+                    w2 = which(rat_off > m_tau*ratio_temp &
+                                   rat_off < (1/m_tau)*ratio_temp)
+                    w3 = which(is.finite(t_stat_int_surface[, kk]))
+                    
+                    wAll = intersect(w1, w2)
+                    wAll = intersect(wAll, w3)
+                    
+                    total_match[ii] = length(wAll)
+                    
+                    if (length(wAll) > 10) {
+                        
+                        testStatsNULL = t_stat_int_surface[wAll, kk]
+                        
+                        testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
+                        
+                        store[ii,] = sample(testStatsNULL, n_matches, replace=TRUE)
+                    }
+                }
+                
+                # Ensure that at least 75% of the observed boundaries have more than 10 matches
+                if(summary(total_match)[2] > 10) {
+                    break
+                } else {
+                    print("Need more matches (tau)!")
+                    print(paste0("Current perc = ", m_tau))
+                    print(summary(total_match))
+                    m_tau = m_tau - 0.01
+                }
+            }
+            
+            
+            for (jj in 1:nrow(Xtest)) {
+                indPvalue[jj] = mean(store[jj,] > Ytest[jj])
+            }
+            
+            globalPvalue[1] = mean(apply(store, 2, max, na.rm=TRUE) > 
+                                          max(Ytest, na.rm=TRUE))
+            globalPvalue[2] = mean(apply(store, 2, mean, na.rm=TRUE) > 
+                                          mean(Ytest, na.rm=TRUE))
+            
+            indiv_results[kk] = mean(indPvalue < .05, na.rm=TRUE)
+            global_results[kk,] = globalPvalue
         }
-        
-        for (jj in 1:nrow(Xtest)) {
-            indPvalue[jj,kk] = mean(store[jj,,kk] > Ytest[jj])
-        }
-        
-        globalPvalue[1,kk] = mean(apply(store[,,kk], 2, max, na.rm=TRUE) > 
-                                    max(Ytest, na.rm=TRUE))
-        globalPvalue[2,kk] = mean(apply(store[,,kk], 2, mean, na.rm=TRUE) > 
-                                      mean(Ytest, na.rm=TRUE))
-        globalPvalue[3,kk] = mean(apply(store[,,kk], 2, median, na.rm=TRUE) > 
-                                      median(Ytest, na.rm=TRUE))
     }
-    
-    indiv_results[k,] = apply(indPvalue < .05, 2, mean, na.rm=TRUE)
-    global_results[['max']][k, ] = globalPvalue[1,]
-    global_results[['mean']][k, ] = globalPvalue[2,]
-    global_results[['median']][k, ] = globalPvalue[3,]
 }
 print("Theta")
 print(indiv_results_theta)
@@ -198,31 +226,162 @@ print("Tau")
 print(indiv_results)
 print(global_results)
 
+# Plotting results ------------------------------------------------------------
+library(tidyverse, quietly = T)
+library(gridExtra, quietly = T)
+library(latex2exp, quietly = T)
+buff_val = 3:10
+n_buff_width = length(buff_val)
+# Figure of Naive P-val  -------------------------------------------------------
+load(paste0('../Output_tree_rev/origGridInfo/origData_4.dat'))
+unadjPVal = data.frame("p" = na.omit(origData$str_info$naive_pval))
+realData_naive = ggplot(unadjPVal, aes(x=p)) + 
+    geom_histogram(color="black", fill="white", bins = floor(sqrt(nrow(origData$str_info)))) +
+    xlab("P-Values") + 
+    ylab("Frequency") + 
+    ggtitle(paste0("Histogram of p-values at buffer width 600 ft")) + 
+    theme(text = element_text(size=8))
+ggsave(filename = "../Plots_rev/negControl_pval.png", 
+       plot = realData_naive, width = 1000, height = 800, units = "px")
 
-print("Individual test results ---------------------------------------------")
-print("Buffer & theta & tau")
-for(i in 1:8) {
-    print(paste0(i+2, "00ft & ", round(indiv_results_theta[i], digits = 4),
-                 " & ", round(indiv_results[i,1], digits = 4),
-                 " & ", round(indiv_results[i,2], digits = 4),
-                 " & ", round(indiv_results[i,3], digits = 4),
-                 " & ", round(indiv_results[i,4], digits = 4),
-                 " & ", round(indiv_results[i,5], digits = 4),
-                 " & ", round(indiv_results[i,6], digits = 4),
-                 " & ", round(indiv_results[i,7], digits = 4),
-                 " & ", round(indiv_results[i,8], digits = 4)))
+load('../Output_tree_rev/origGridInfo/origData_1.dat')
+unadjPValTotal = data.frame(na.omit(origData$str_info$naive_pval))
+for (i in 2:n_buff_width) {
+    load(paste0('../Output_tree_rev/origGridInfo/origData_', i, '.dat'))
+    unadjPValTotal = cbind(unadjPValTotal, data.frame(na.omit(origData$str_info$naive_pval)))
 }
+colnames(unadjPValTotal) = as.character(buff_val)
 
-print("Global test results -------------------------------------------------")
-print("Buffer & theta & tau")
-for(i in 1:8) {
-    print(paste0(i+2, "00ft & (", round(global_results_theta[i,1], digits = 3), ", ", round(global_results_theta[i,2], digits = 3),
-                 ") & (", round(global_results$max[i,1], digits = 3),", ", round(global_results$mean[i,1], digits = 3),
-                 ") & (", round(global_results$max[i,2], digits = 3),", ", round(global_results$mean[i,2], digits = 3),
-                 ") & (", round(global_results$max[i,3], digits = 3),", ", round(global_results$mean[i,3], digits = 3),
-                 ") & (", round(global_results$max[i,4], digits = 3),", ", round(global_results$mean[i,4], digits = 3),
-                 ") & (", round(global_results$max[i,5], digits = 3),", ", round(global_results$mean[i,5], digits = 3),
-                 ") & (", round(global_results$max[i,6], digits = 3),", ", round(global_results$mean[i,6], digits = 3),
-                 ") & (", round(global_results$max[i,7], digits = 3),", ", round(global_results$mean[i,7], digits = 3),
-                 ") & (", round(global_results$max[i,8], digits = 3),", ", round(global_results$mean[i,8], digits = 3), ")"))
+percRejection = data.frame("perc" = rep(1,length(buff_val)), "buff" = buff_val)
+for (i in 1:length(buff_val)) {
+    percRejection[i,1] = sum(na.omit(unadjPValTotal[,i] < 0.05)) / sum(!is.na(unadjPValTotal[,i]))
 }
+percRejection$buff = as.factor(percRejection$buff)
+
+print(percRejection)
+
+realData_naive_total = ggplot(percRejection, aes(y=perc, x=buff)) + 
+    geom_bar(position="dodge", stat="identity") + 
+    ggtitle("Percentage of p-values less than 0.05") +
+    xlab("Buffer width (100x in ft)") + 
+    ylab("Percent") +
+    ylim(0, 1) +
+    theme(text = element_text(size=8))
+ggsave(filename = "../Plots_rev/negControl_pval_total.png", 
+       plot = realData_naive_total, width = 1000, height = 800, units = "px")
+
+# Individual test results (theta) ----------------------------------------------
+myData_theta <- data.frame(buff_val, indiv_results_theta)
+myData_theta$buff_val = myData_theta$buff_val * 100
+myData_theta$buff_val = as.factor(myData_theta$buff_val)
+
+i_p_theta = ggplot(myData_theta, aes(y=indiv_results_theta, x=buff_val)) +
+    geom_bar(position="dodge", stat="identity") +
+    labs(title="Percent of p-values less than 0.05 (Neg. Control)",
+         subtitle=TeX(r'(Estimand: $\theta$)'))+
+    xlab(TeX(r'($\delta$)')) +
+    ylab("Percent") +
+    ylim(0,1)+
+    geom_hline(yintercept=0.05, linetype="dashed",
+               color = "red", linewidth = 0.5) +
+    theme(text = element_text(size=8), legend.position="bottom",
+          legend.title=element_blank(),
+          legend.key.height= unit(1, 'mm'),
+          legend.key.width= unit(4, 'mm'),
+          legend.box.margin=margin(-10,-10,-10,-10)) +
+    scale_fill_discrete(name = "P-Value")
+
+ggsave(filename = "../Plots_rev/negControl_theta_single.png", plot = i_p_theta, 
+       width = 1000, height = 800, units = "px")
+
+
+# Individual test results (tau) ------------------------------------------------
+myData_tau <- data.frame(adjust_val, indiv_results)
+myData_tau$adjust_val = as.factor(myData_tau$adjust_val)
+
+i_p_tau = ggplot(myData_tau, aes(y=indiv_results, x=adjust_val)) +
+    geom_bar(position="dodge", stat="identity") +
+    labs(title="Percent of p-values less than 0.05 (Neg. Control)",
+         subtitle=TeX(r'(Estimand: $\tau$)'))+
+    xlab("Spatial smoothing multiplier") +
+    ylab("Percent") +
+    ylim(0,1)+
+    geom_hline(yintercept=0.05, linetype="dashed",
+               color = "red", linewidth = 0.5) +
+    theme(text = element_text(size=8), legend.position="bottom",
+          legend.title=element_blank(),
+          legend.key.height= unit(1, 'mm'),
+          legend.key.width= unit(4, 'mm'),
+          legend.box.margin=margin(-10,-10,-10,-10)) +
+    scale_fill_discrete(name = "P-Value")
+
+ggsave(filename = "../Plots_rev/negControl_tau_single.png", plot = i_p_tau, 
+       width = 1000, height = 800, units = "px")
+
+# Global test results (theta) --------------------------------------------------
+global_results_plot_theta = data.frame("buff" = as.factor(rep(buff_val*100, 2)),
+                                 "p" = c(global_results_theta),
+                                 "test_stat" = as.factor(c(rep("max", n_buff_width),
+                                                           rep("mean", n_buff_width))))
+
+global_plot_theta = ggplot(global_results_plot_theta, aes(y=p, x=buff, fill = test_stat)) +
+    geom_bar(position="dodge", stat="identity") +
+    labs(title="P-Values for global test (Neg. Control)")+
+    xlab(TeX(r'($\delta$)')) +
+    ylab("P-Value") +
+    ylim(0,1)+
+    geom_hline(yintercept=0.05, linetype="dashed",
+               color = "red", linewidth = 0.5) +
+    scale_fill_manual(name="Test statistic",
+                      labels=c("max", "mean"),
+                      values = c("#F8766D", "#00BFC4")) +
+    theme(text = element_text(size=8),
+          legend.title = element_text(size=5),
+          legend.text = element_text(size=5),
+          legend.key.size = unit(0.25, 'cm'))
+
+ggsave(filename = "../Plots_rev/negControl_theta_global.png", 
+       plot = global_plot_theta, width = 1000, height = 800, units = "px")
+
+# Global test results (tau) ----------------------------------------------------
+global_results_plot = data.frame("adjust" = as.factor(rep(adjust_val, 2)),
+                                 "p" = c(global_results),
+                                 "test_stat" = as.factor(c(rep("max", length(adjust_val)),
+                                                           rep("mean", length(adjust_val)))))
+
+global_plot_tau = ggplot(global_results_plot, aes(y=p, x=adjust, fill = test_stat)) +
+    geom_bar(position="dodge", stat="identity") +
+    labs(title="P-Values for global test (Neg. Control)")+
+    xlab("Spatial smoothing multiplier") +
+    ylab("P-Value") +
+    ylim(0,1)+
+    geom_hline(yintercept=0.05, linetype="dashed",
+               color = "red", linewidth = 0.5) +
+    scale_fill_manual(name="Test statistic",
+                      labels=c("max", "mean"),
+                      values = c("#F8766D", "#00BFC4")) +
+    theme(text = element_text(size=8),
+          legend.title = element_text(size=5),
+          legend.text = element_text(size=5),
+          legend.key.size = unit(0.25, 'cm'))
+
+ggsave(filename = "../Plots_rev/negControl_tau_global.png", 
+       plot = global_plot_tau, width = 1000, height = 800, units = "px")
+
+
+# # Histograms for global test -------------------------------------------
+# globalEmpDist = data.frame("num" = global_null_plot)
+# g_plot_max = ggplot(globalEmpDist, aes(x=num)) +
+#     geom_histogram(color="black", fill="white", bins = floor(sqrt(nrow(globalEmpDist)))) +
+#     geom_vline(data=globalObsVal, aes(xintercept=obs, color="red"), size=1) +
+#     ggtitle(paste0("Distr. of global test stat. (smoothing mult. = ", adjust_val[kk], ")")) +
+#     xlab("Test statistic") +
+#     ylab("Frequency") +
+#     theme(legend.position="none", text = element_text(size=6)) +
+#     theme(plot.margin = unit(c(.2,.2,.2,.2), "mm")) +
+#     theme(axis.title.x = element_text(vjust=2)) +
+#     theme(plot.title = element_text(vjust=-2))
+# 
+# realData_global_sep_surf = grid.arrange(g_plots_surf[[2]][[2]], g_plots_surf[[2]][[4]], g_plots_surf[[2]][[5]], nrow = 3)
+# ggsave(filename = "Plots/realData_global_sep_surf.png", plot = realData_global_sep_surf, width = 1000, height = 800, units = "px")
+
