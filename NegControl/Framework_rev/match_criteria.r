@@ -203,10 +203,10 @@ for(i in 1:length(p_theta)) {
     p_theta[[i]] = ggplot(p_val_theta, aes( y=y, x=x)) +
         geom_point(color = "red", size = 2) +
         geom_smooth(method = "loess", formula = y ~ x, span=0.5) +
-        labs(title=TeX(r'($\theta$: Matching's Effect on Type I Error)'), 
+        labs(title=TeX(r'($\theta$: Matching's effect on type I error)'), 
              subtitle=substitute(paste(delta," = ",m, "00"),list(m=i+2))) +
-        xlab("Measure of match similarity") +
-        ylab("Type I Error") +
+        xlab(TeX(r'(Measure of match similarity ($c$) )')) +
+        ylab("Type I error") +
         ylim(0,max(p_val_theta$y)) +
         scale_x_continuous(breaks = pretty(p_val_theta$x, n = 10)) +
         geom_hline(yintercept=0.05, linetype="dashed",
@@ -220,10 +220,10 @@ for(i in 1:length(p_tau)) {
     p_tau[[i]] = ggplot(p_val_tau, aes( y=y, x=x)) +
         geom_point(color = "red", size = 2) +
         geom_smooth(method = "loess", formula = y ~ x, span=0.5) +
-        labs(title=TeX(r'($\tau$: Matching's Effect on Type I Error)'), 
+        labs(title=TeX(r'($\tau$: Matching's effect on type I error)'), 
              subtitle=substitute(paste("Spatial smoothing multiplier (", sigma," x ",m, ")"),list(m=adjust_val[i]))) +
-        xlab("Measure of match similarity") +
-        ylab("Type I Error") +
+        xlab(TeX(r'(Measure of match similarity ($c$) )')) +
+        ylab("Type I error") +
         ylim(0,max(p_val_tau$y)) +
         scale_x_continuous(breaks = pretty(p_val_tau$x, n = 10)) +
         geom_hline(yintercept=0.05, linetype="dashed",
@@ -232,17 +232,19 @@ for(i in 1:length(p_tau)) {
 }
 
 pdf("../Plots_rev/match_theta.pdf", onefile = T)
-grid.arrange(p_theta[[1]], p_theta[[2]], ncol = 1, nrow = 2)
-grid.arrange(p_theta[[3]], p_theta[[4]], ncol = 1, nrow = 2)
-grid.arrange(p_theta[[5]], p_theta[[6]], ncol = 1, nrow = 2)
-grid.arrange(p_theta[[7]], p_theta[[8]], ncol = 1, nrow = 2)
+grid.arrange(p_theta[[1]], p_theta[[3]], ncol = 1, nrow = 2)
+grid.arrange(p_theta[[2]], p_theta[[4]], ncol = 1, nrow = 2)
+grid.arrange(p_theta[[5]], p_theta[[7]], ncol = 1, nrow = 2)
+grid.arrange(p_theta[[6]], p_theta[[8]], ncol = 1, nrow = 2)
 dev.off()
 
 pdf("../Plots_rev/match_tau.pdf", onefile = T)
-grid.arrange(p_tau[[1]], p_tau[[2]], ncol = 1, nrow = 2)
-grid.arrange(p_tau[[3]], p_tau[[4]], ncol = 1, nrow = 2)
-grid.arrange(p_tau[[5]], p_tau[[6]], ncol = 1, nrow = 2)
+grid.arrange(p_tau[[1]], p_tau[[3]], ncol = 1, nrow = 2)
+grid.arrange(p_tau[[2]], p_tau[[4]], ncol = 1, nrow = 2)
+grid.arrange(p_tau[[5]], ncol = 1, nrow = 2)
+grid.arrange(p_tau[[6]], ncol = 1, nrow = 2)
 dev.off()
+
 
 match_count_list = vector(mode = 'list', length = 2)
 names(match_count_list) = c('theta', 'tau')

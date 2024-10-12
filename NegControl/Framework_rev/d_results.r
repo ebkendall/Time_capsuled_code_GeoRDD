@@ -7,11 +7,13 @@ adjust_val = c(0.5, 1, 1.5, 2, 3, 4)
 
 # Theta ------------------------------------------------------------------------
 indiv_results_theta = rep(NA, n_buff_width)
+indiv_pvalue_theta = matrix(nrow = n_buff_width, ncol = length(indexList_MAIN))
 global_results_theta = matrix(NA, nrow = n_buff_width, ncol = 2)
 colnames(global_results_theta) = c("max", "mean")
 
 # Tau --------------------------------------------------------------------------
 indiv_results = rep(NA, length(adjust_val))
+indiv_pvalue = matrix(nrow = length(adjust_val), ncol = length(indexList_MAIN))
 global_results = matrix(NA, nrow = length(adjust_val), ncol = 2)
 colnames(global_results) = c("max", "mean")
 
@@ -131,6 +133,7 @@ for(k in 1:n_buff_width) {
                                   mean(Y_theta, na.rm=TRUE))
     
     indiv_results_theta[k] = mean(indPvalue_theta < .05, na.rm=TRUE)
+    indiv_pvalue_theta[k, ] = indPvalue_theta
     global_results_theta[k,] = globalPvalue_theta
 
     # Tau ----------------------------------------------------------------------
@@ -215,6 +218,7 @@ for(k in 1:n_buff_width) {
                                           mean(Ytest, na.rm=TRUE))
             
             indiv_results[kk] = mean(indPvalue < .05, na.rm=TRUE)
+            indiv_pvalue[kk, ] = indPvalue
             global_results[kk,] = globalPvalue
         }
     }
@@ -294,6 +298,21 @@ i_p_theta = ggplot(myData_theta, aes(y=indiv_results_theta, x=buff_val)) +
 ggsave(filename = "../Plots_rev/negControl_theta_single.png", plot = i_p_theta, 
        width = 1000, height = 800, units = "px")
 
+# Individual result p-value histograms (theta) ---------------------------------
+p = list()
+for(i in 1:length(buff_val)) {
+    adjPVal500 = data.frame("p" = na.omit(indiv_pvalue_theta[i,]))
+    p[[i]] = ggplot(adjPVal500, aes(x=p)) + 
+        geom_histogram(color="black", fill="white", bins = sqrt(144)) +
+        xlab("P-Values") + 
+        ylab("Frequency") + 
+        labs(title = "Corrected p-values (Neg. Control)",
+             subtitle = substitute(paste("(", delta," = ",m, ")"),list(m=100*(i+2) ))) +
+        theme(text = element_text(size=8))
+}
+pdf("../Plots_rev/negControl_theta_pHist.pdf", onefile = T)
+grid.arrange(p[[1]], p[[2]], p[[3]], p[[4]], p[[5]], p[[6]], p[[7]], p[[8]], nrow = 4, ncol = 2)
+dev.off()
 
 # Individual test results (tau) ------------------------------------------------
 myData_tau <- data.frame(adjust_val, indiv_results)
@@ -317,6 +336,23 @@ i_p_tau = ggplot(myData_tau, aes(y=indiv_results, x=adjust_val)) +
 
 ggsave(filename = "../Plots_rev/negControl_tau_single.png", plot = i_p_tau, 
        width = 1000, height = 800, units = "px")
+
+# Individual result p-value histograms (tau) ---------------------------------
+p_tau = list()
+for(i in 1:length(adjust_val)) {
+    adjPVal500 = data.frame("p" = na.omit(indiv_pvalue[i,]))
+    p_tau[[i]] = ggplot(adjPVal500, aes(x=p)) + 
+        geom_histogram(color="black", fill="white", bins = sqrt(144)) +
+        xlab("P-Values") + 
+        ylab("Frequency") + 
+        labs(title = "Corrected p-values (Neg. Control)",
+             subtitle = substitute(paste("Spatial smoothing multiplier (", sigma," x ",m, ")"),list(m=adjust_val[i]))) +
+        theme(text = element_text(size=8))
+}
+pdf("../Plots_rev/negControl_tau_pHist.pdf", onefile = T)
+grid.arrange(p_tau[[1]], p_tau[[2]], p_tau[[3]], p_tau[[4]], 
+             p_tau[[5]], p_tau[[6]], nrow = 3, ncol = 2)
+dev.off()
 
 # Global test results (theta) --------------------------------------------------
 global_results_plot_theta = data.frame("buff" = as.factor(rep(buff_val*100, 2)),

@@ -8,11 +8,13 @@ n_matches = 2000
 
 # Theta ------------------------------------------------------------------------
 indiv_results_theta = rep(NA, n_buff_width)
+indiv_pvalue_theta = matrix(nrow = n_buff_width, ncol = length(indexList_MAIN))
 global_results_theta = matrix(NA, nrow = n_buff_width, ncol = 2)
 colnames(global_results_theta) = c("max", "mean")
 
 # Tau --------------------------------------------------------------------------
 indiv_results = rep(NA, length(adjust_val))
+indiv_pvalue = matrix(nrow = length(adjust_val), ncol = length(indexList_MAIN))
 global_results = matrix(NA, nrow = length(adjust_val), ncol = 2)
 colnames(global_results) = c("max", "mean")
 
@@ -169,6 +171,7 @@ for(k in 1:n_buff_width) {
                                      mean(Y_theta, na.rm=TRUE))
     
     indiv_results_theta[k] = mean(indPvalue_theta < .05, na.rm=TRUE)
+    indiv_pvalue_theta[k, ] = indPvalue_theta
     global_results_theta[k,] = globalPvalue_theta
     
     # Tau ----------------------------------------------------------------------
@@ -258,6 +261,7 @@ for(k in 1:n_buff_width) {
                                         mean(Ytest, na.rm=TRUE))
             
             indiv_results[kk] = mean(indPvalue < .05, na.rm=TRUE)
+            indiv_pvalue[kk, ] = indPvalue
             global_results[kk,] = globalPvalue
             
             if(kk == 2) {
@@ -345,6 +349,22 @@ i_p_theta = ggplot(myData_theta, aes(y=indiv_results_theta, x=buff_val)) +
 ggsave(filename = "../Plots_rev/realData_theta_single.png", plot = i_p_theta, 
        width = 1000, height = 800, units = "px")
 
+# Individual result p-value histograms (theta) ---------------------------------
+p = list()
+for(i in 1:length(buff_val)) {
+    adjPVal500 = data.frame("p" = na.omit(indiv_pvalue_theta[i,]))
+    p[[i]] = ggplot(adjPVal500, aes(x=p)) + 
+        geom_histogram(color="black", fill="white", bins = sqrt(144)) +
+        xlab("P-Values") + 
+        ylab("Frequency") + 
+        labs(title = "Corrected p-values (Arrest Data)",
+             subtitle = substitute(paste("(", delta," = ",m, ")"),list(m=100*(i+2) ))) +
+        theme(text = element_text(size=8))
+}
+pdf("../Plots_rev/realData_theta_pHist.pdf", onefile = T)
+grid.arrange(p[[1]], p[[2]], p[[3]], p[[4]], p[[5]], p[[6]], p[[7]], p[[8]], nrow = 4, ncol = 2)
+dev.off()
+
 
 # Individual test results (tau) ------------------------------------------------
 myData_tau <- data.frame(adjust_val, indiv_results)
@@ -368,6 +388,23 @@ i_p_tau = ggplot(myData_tau, aes(y=indiv_results, x=adjust_val)) +
 
 ggsave(filename = "../Plots_rev/realData_tau_single.png", plot = i_p_tau, 
        width = 1000, height = 800, units = "px")
+
+# Individual result p-value histograms (tau) ---------------------------------
+p_tau = list()
+for(i in 1:length(adjust_val)) {
+    adjPVal500 = data.frame("p" = na.omit(indiv_pvalue[i,]))
+    p_tau[[i]] = ggplot(adjPVal500, aes(x=p)) + 
+        geom_histogram(color="black", fill="white", bins = sqrt(144)) +
+        xlab("P-Values") + 
+        ylab("Frequency") + 
+        labs(title = "Corrected p-values (Arrest Data)",
+             subtitle = substitute(paste("Spatial smoothing multiplier (", sigma," x ",m, ")"),list(m=adjust_val[i]))) +
+        theme(text = element_text(size=8))
+}
+pdf("../Plots_rev/realData_tau_pHist.pdf", onefile = T)
+grid.arrange(p_tau[[1]], p_tau[[2]], p_tau[[3]], p_tau[[4]], 
+             p_tau[[5]], p_tau[[6]], nrow = 3, ncol = 2)
+dev.off()
 
 # Global test results (theta) --------------------------------------------------
 global_results_plot_theta = data.frame("buff" = as.factor(rep(buff_val*100, 2)),
@@ -449,4 +486,190 @@ g_plot_mean = ggplot(globalEmpDist_mean, aes(x=num)) +
 
 ggsave(filename = "../Plots_rev/realData_tau_global_hist.png", 
        plot = grid.arrange(g_plot_max, g_plot_mean, nrow = 2), width = 1000, height = 800, units = "px")
+
+# Plot illustrating importance of matching -------------------------------------
+load(paste0('../Output_rev/nullGridInfo/combinedMatchingSetup', 4, ".dat"))
+load(paste0('../Output_rev/origGridInfo/origData_', 4, '.dat'))
+
+## Now remove data points where these ratios are much different
+area_ratio = c(na.omit(origData$str_info$area1 / origData$str_info$area2))
+area_ratio[area_ratio < 1] = 1 / area_ratio[area_ratio < 1]
+wMax_a = max(area_ratio)
+wMin_a = min(area_ratio)
+
+street_ratio = c(na.omit(origData$str_info$streets1 / origData$str_info$streets2))
+street_ratio[street_ratio < 1] = 1 / street_ratio[street_ratio < 1]
+wMax_s = max(street_ratio)
+wMin_s = min(street_ratio)
+
+# Which null streets meet these requirements
+wRatioOk = which(combinedMatchingSetupFix$DATA$ratioArea > wMin_a &
+                     combinedMatchingSetupFix$DATA$ratioArea < wMax_a & 
+                     combinedMatchingSetupFix$DATA$ratioStreet > wMin_s &
+                     combinedMatchingSetupFix$DATA$ratioStreet < wMax_s)
+
+combinedMatchingSetupFix2 = combinedMatchingSetupFix$DATA[wRatioOk,]
+int_surface_info = combinedMatchingSetupFix$INT_SURFACE[wRatioOk,]
+off_surface_info = combinedMatchingSetupFix$OFF_SURFACE[wRatioOk,]
+
+# Wherever there is a 0 for the offense count, everything gets scaled by 1
+which_zeros = which(combinedMatchingSetupFix2$n_off_1 == 0 | combinedMatchingSetupFix2$n_off_2 == 0)
+combinedMatchingSetupFix2$n_arr_1[which_zeros] = combinedMatchingSetupFix2$n_arr_1[which_zeros] + 1
+combinedMatchingSetupFix2$n_arr_2[which_zeros] = combinedMatchingSetupFix2$n_arr_2[which_zeros] + 1
+combinedMatchingSetupFix2$n_off_1[which_zeros] = combinedMatchingSetupFix2$n_off_1[which_zeros] + 1
+combinedMatchingSetupFix2$n_off_2[which_zeros] = combinedMatchingSetupFix2$n_off_2[which_zeros] + 1
+
+which_zeros_orig = which(origData$str_info$n_off_1_prec == 0 | origData$str_info$n_off_2_prec == 0)
+origData$str_info$n_arr_1_prec[which_zeros_orig] = origData$str_info$n_arr_1_prec[which_zeros_orig] + 1
+origData$str_info$n_arr_2_prec[which_zeros_orig] = origData$str_info$n_arr_2_prec[which_zeros_orig] + 1
+origData$str_info$n_off_1_prec[which_zeros_orig] = origData$str_info$n_off_1_prec[which_zeros_orig] + 1
+origData$str_info$n_off_2_prec[which_zeros_orig] = origData$str_info$n_off_2_prec[which_zeros_orig] + 1
+
+rat_off = combinedMatchingSetupFix2$n_off_1 / combinedMatchingSetupFix2$n_off_2
+rat_off[rat_off < 1] = 1 / rat_off[rat_off < 1]
+tot_off = combinedMatchingSetupFix2$n_off_1 + combinedMatchingSetupFix2$n_off_2
+
+# Split this up via the spatial adjustment
+t_stat_plot_list = vector(mode = 'list', length = length(adjust_val))
+var_stat_plot_list = vector(mode = 'list', length = length(adjust_val))
+
+ratio_breaks = seq(0, 60, 6)
+sum_breaks   = seq(1200, 0, -60)
+c_name = NULL
+r_name = NULL
+for(i in 2:length(ratio_breaks)) r_name = c(r_name, paste0(ratio_breaks[i-1], "-", ratio_breaks[i]))
+for(i in 2:length(sum_breaks)) c_name = c(c_name, paste0(sum_breaks[i], "-", sum_breaks[i-1]))
+
+for(k in 1:length(adjust_val)) {
+    t_stat_new = log(abs(int_surface_info[, 3*k-2] / off_surface_info[, 3*k-2]
+                           - int_surface_info[, 3*k-1] / off_surface_info[, 3*k-1]))
+    
+    plotting_info = data.frame("t_stat_new" = t_stat_new, "totLength" = tot_off, "ratioOff" = rat_off)
+    plotting_info = plotting_info[!is.na(plotting_info$totLength), ]
+    
+    t_stat_plot = matrix(nrow = length(ratio_breaks)-1, ncol = length(sum_breaks)-1)
+    var_stat_plot = matrix(nrow = length(ratio_breaks)-1, ncol = length(sum_breaks)-1)
+    for(i in 2:length(ratio_breaks)) {
+        sub_rat = plotting_info[plotting_info$ratioOff <= ratio_breaks[i] &
+                                    plotting_info$ratioOff > ratio_breaks[i-1], , drop = F]
+        for(j in 2:length(sum_breaks)) {
+            sub_tot = sub_rat[sub_rat$totLength > sum_breaks[j] & sub_rat$totLength <= sum_breaks[j-1], ,drop=F]
+            if(nrow(sub_tot) > 0) {
+                t_stat_plot[i-1, j-1] = mean(sub_tot$t_stat_new, na.rm = T)
+                var_stat_plot[i-1, j-1] = var(sub_tot$t_stat_new, na.rm = T)
+            }
+        }
+    }
+    
+    colnames(t_stat_plot) = c_name
+    rownames(t_stat_plot) = r_name
+    
+    colnames(var_stat_plot) = c_name
+    rownames(var_stat_plot) = r_name
+    
+    t_stat_plot_list[[k]] = t_stat_plot
+    var_stat_plot_list[[k]] = var_stat_plot
+}
+
+library(egg)
+
+# Formatting for ggplot
+x <- c_name
+y <- r_name
+t_stat_plot_list_gg = vector(mode = 'list', length = length(adjust_val))
+var_stat_plot_list_gg = vector(mode = 'list', length = length(adjust_val))
+for(k in 1:length(adjust_val)) {
+    data <- expand.grid(X=x, Y=y)
+    data$Z <- c(t(t_stat_plot_list[[k]]))
+    t_stat_plot_list_gg[[k]] = ggplot(data, aes(X, Y, fill= Z)) + 
+        geom_tile() +
+        labs(title=paste0("Mean (smoothing multiplier = ", adjust_val[k], ")")) +
+        scale_fill_gradient(low = "navy", high = "red", na.value="white") +
+        scale_x_discrete(guide = guide_axis(angle = 90)) +
+        theme_minimal() +
+        theme(axis.title.x = element_blank(),
+              axis.title.y = element_blank(),
+              legend.position = "none",
+              plot.title = element_text(size=10)) 
+    
+    data2 <- expand.grid(X=x, Y=y)
+    data2$Z <- c(t(var_stat_plot_list[[k]]))
+    var_stat_plot_list_gg[[k]] = ggplot(data2, aes(X, Y, fill= Z)) + 
+        geom_tile() +
+        labs(title=paste0("Variance (smoothing multiplier = ", adjust_val[k], ")")) +
+        scale_fill_gradient(low = "navy", high = "red", na.value="white") +
+        scale_x_discrete(guide = guide_axis(angle = 90)) +
+        theme_minimal() +
+        theme(axis.title.x = element_blank(),
+              axis.title.y = element_blank(),
+              legend.position = "none",
+              plot.title = element_text(size=10)) 
+}
+
+app3 = ggarrange(t_stat_plot_list_gg[[1]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.title.x = element_blank()), 
+                 t_stat_plot_list_gg[[2]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[1]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()), 
+                 var_stat_plot_list_gg[[2]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 t_stat_plot_list_gg[[3]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.title.x = element_blank()),
+                 t_stat_plot_list_gg[[4]] + 
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[3]] +
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[4]] + 
+                     theme(axis.text.x = element_blank(),
+                           axis.text.y = element_blank(),
+                           axis.ticks.x = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.x = element_blank(),
+                           axis.title.y = element_blank()),
+                 t_stat_plot_list_gg[[5]],
+                 t_stat_plot_list_gg[[6]] +
+                     theme(axis.text.y = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[5]] +
+                     theme(axis.text.y = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.y = element_blank()),
+                 var_stat_plot_list_gg[[6]] +
+                     theme(axis.text.y = element_blank(),
+                           axis.ticks.y = element_blank(),
+                           axis.title.y = element_blank()),
+                 nrow = 3, ncol = 4)
+
+ggsave(filename = "../Plots_rev/appendix_res_surf_both.pdf", plot = app3, width=11, height=8.5)
 

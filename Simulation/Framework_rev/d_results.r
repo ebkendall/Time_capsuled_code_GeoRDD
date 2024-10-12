@@ -78,7 +78,6 @@ test_stats_orig <- function(gridPointValues, sim_orig, ii) {
 
 options(warn=1)
 load("../Data/indexList_MAIN.RData")
-load("../../NegControl/Output_tree_rev/match_count_list.dat")
 n_buff_width = 8
 
 # for(trialNum in 1:1000) {
@@ -104,8 +103,6 @@ n_buff_width = 8
         
     
     for(k in 1:n_buff_width) {
-        m_theta = match_count_list[["theta"]][k]
-        
         load(paste0('../Output_noWater_rev/nullGridInfo/combinedMatchingSetup', k, ".dat"))
         load(paste0('../Output_noWater_rev/origGridInfo/sim_orig_', k, '.dat'))
         
@@ -155,7 +152,6 @@ n_buff_width = 8
             n_matches = 2000
             
             # Theta --------------------------------------------------------------------
-            store_theta = matrix(NA, nrow = length(indexList_MAIN), ncol = n_matches)
             indPvalue_theta = rep(NA, length(indexList_MAIN))
             globalPvalue_theta = rep(NA, 2)
             Y_theta = rep(NA, length(indexList_MAIN))
@@ -175,41 +171,47 @@ n_buff_width = 8
                 counter = counter + 1
             }
             
-            for(ii in 1:nrow(X_theta)) {
-                off_temp = X_theta[ii,2]
-                ratio_temp = X_theta[ii,1]
+            m_theta = 0.99 # initialize measure of similarity
+            store_theta = NULL
+            repeat {
+                total_match = rep(0, nrow(X_theta))
+                store_theta = matrix(NA, nrow = length(indexList_MAIN), ncol = n_matches)
                 
-                w1 = which((combinedMatchingSetupFix2$DATA$area1 + 
-                                combinedMatchingSetupFix2$DATA$area2) > m_theta*off_temp &
-                               (combinedMatchingSetupFix2$DATA$area1 + 
-                                    combinedMatchingSetupFix2$DATA$area2) < (1/m_theta)*off_temp)
-                
-                w2 = which(rat_off > m_theta*ratio_temp &
-                               rat_off < (1/m_theta)*ratio_temp)
-                
-                wAll = intersect(w1, w2)
-                
-                if (length(wAll) > 10) {
+                for(ii in 1:nrow(X_theta)) {
+                    off_temp = X_theta[ii,2]
+                    ratio_temp = X_theta[ii,1]
                     
-                    if(length(wAll) > n_matches) {
-                        # Use Mahalanobis distance to narrow it down
-                        null_sum_ii = null_sum[wAll]
-                        null_ratio_ii = rat_off[wAll]
-                        v1_ii = sd(null_sum_ii, na.rm = T)^2
-                        v2_ii = sd(null_ratio_ii, na.rm = T)^2
-                        dist_temp = sqrt(((off_temp - null_sum_ii)^2/v1_ii) + ((ratio_temp - null_ratio_ii)^2 / v2_ii))
+                    w1 = which((combinedMatchingSetupFix2$DATA$area1 + 
+                                    combinedMatchingSetupFix2$DATA$area2) > m_theta*off_temp &
+                                   (combinedMatchingSetupFix2$DATA$area1 + 
+                                        combinedMatchingSetupFix2$DATA$area2) < (1/m_theta)*off_temp)
+                    
+                    w2 = which(rat_off > m_theta*ratio_temp &
+                                   rat_off < (1/m_theta)*ratio_temp)
+                    
+                    wAll = intersect(w1, w2)
+                    
+                    total_match[ii] = length(wAll)
+                    
+                    if (length(wAll) > 10) {
                         
-                        sample_wAll = sample(wAll[order(dist_temp)[1:n_matches]], n_matches, replace = T)
-                    } else {
                         sample_wAll = sample(wAll, n_matches, replace = T)   
+                        tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, sample_wAll)
+                        testStatsNULL = tStats_temp$t_stat
+                        
+                        store_theta[ii,] = testStatsNULL
                     }
-                    
-                    tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, sample_wAll)
-                    testStatsNULL = tStats_temp$t_stat
-                
-                    store_theta[ii,] = testStatsNULL
                 }
                 
+                # Ensure that at least 75% of the observed boundaries have more than 10 matches
+                if(summary(total_match)[2] > 10) {
+                    break
+                } else {
+                    print("Need more matches (theta)!")
+                    print(paste0("Current perc = ", m_theta))
+                    print(summary(total_match))
+                    m_theta = m_theta - 0.01
+                }
             }
             
             for (jj in 1:nrow(X_theta)) {
@@ -236,51 +238,51 @@ n_buff_width = 8
 # }
     
 
-# all_indiv = array(NA, dim=c(1000, n_buff_width, 4))
-# 
-# all_global = vector(mode = 'list', length = 4)
-# all_global[[1]] = all_global[[2]] =
-#     all_global[[3]] = all_global[[4]] = vector(mode = 'list', length = 8)
-# 
-# for(t in 1:1000) {
-# 
-#     load(paste0('../Output_noWater_rev/test_results/indiv_test_', t, '.rda'))
-#     all_indiv[t,,] = indiv_results_theta
-# 
-#     load(paste0('../Output_noWater_rev/test_results/global_test_', t, '.rda'))
-# 
-#     for(i in 1:4) {
-#         for(j in 1:8) {
-#             all_global[[i]][[j]] = rbind(all_global[[i]][[j]],
-#                                          global_results_theta[[i]][j,,drop = F])
-#         }
-#     }
-# 
-# }
-# 
-# print("Individual Results")
-# avg_perc_rej = apply(all_indiv, 2:3, mean)
-# for(j in 1:8) {
-#     print(paste0((j+2)*100, "ft & ", round(avg_perc_rej[j,2], 3),
-#                  " & ", round(avg_perc_rej[j,3], 3),
-#                  " & ", round(avg_perc_rej[j,4], 3),
-#                  " & ", round(avg_perc_rej[j,1], 3)))
-# }
-# 
-# print("Global Results")
-# for(j in 1:8) {
-#     perc_rej_j = apply(all_global[[2]][[j]], 2, function(x){mean(x < 0.05)})
-#     perc_rej_j = c(perc_rej_j, apply(all_global[[3]][[j]], 2, function(x){mean(x < 0.05)}))
-#     perc_rej_j = c(perc_rej_j, apply(all_global[[4]][[j]], 2, function(x){mean(x < 0.05)}))
-#     perc_rej_j = c(perc_rej_j, apply(all_global[[1]][[j]], 2, function(x){mean(x < 0.05)}))
-# 
-#     print(paste0((j+2)*100, "ft & (", round(perc_rej_j[1], 3), ", ",
-#                  round(perc_rej_j[2], 3), ") & (",
-#                  round(perc_rej_j[3], 3), ", ",
-#                  round(perc_rej_j[4], 3), ") & (",
-#                  round(perc_rej_j[5], 3), ", ",
-#                  round(perc_rej_j[6], 3), ") & (",
-#                  round(perc_rej_j[7], 3), ", ",
-#                  round(perc_rej_j[8], 3), ")"))
-# }
+all_indiv = array(NA, dim=c(1000, n_buff_width, 4))
+
+all_global = vector(mode = 'list', length = 4)
+all_global[[1]] = all_global[[2]] =
+    all_global[[3]] = all_global[[4]] = vector(mode = 'list', length = 8)
+
+for(t in 1:1000) {
+
+    load(paste0('../Output_noWater_rev/test_results/indiv_test_', t, '.rda'))
+    all_indiv[t,,] = indiv_results_theta
+
+    load(paste0('../Output_noWater_rev/test_results/global_test_', t, '.rda'))
+
+    for(i in 1:4) {
+        for(j in 1:8) {
+            all_global[[i]][[j]] = rbind(all_global[[i]][[j]],
+                                         global_results_theta[[i]][j,,drop = F])
+        }
+    }
+
+}
+
+print("Individual Results")
+avg_perc_rej = apply(all_indiv, 2:3, mean)
+for(j in 1:8) {
+    print(paste0((j+2)*100, "ft & ", round(avg_perc_rej[j,2], 3),
+                 " & ", round(avg_perc_rej[j,3], 3),
+                 " & ", round(avg_perc_rej[j,4], 3),
+                 " & ", round(avg_perc_rej[j,1], 3)))
+}
+
+print("Global Results")
+for(j in 1:8) {
+    perc_rej_j = apply(all_global[[2]][[j]], 2, function(x){mean(x < 0.05)})
+    perc_rej_j = c(perc_rej_j, apply(all_global[[3]][[j]], 2, function(x){mean(x < 0.05)}))
+    perc_rej_j = c(perc_rej_j, apply(all_global[[4]][[j]], 2, function(x){mean(x < 0.05)}))
+    perc_rej_j = c(perc_rej_j, apply(all_global[[1]][[j]], 2, function(x){mean(x < 0.05)}))
+
+    print(paste0((j+2)*100, "ft & (", round(perc_rej_j[1], 3), ", ",
+                 round(perc_rej_j[2], 3), ") & (",
+                 round(perc_rej_j[3], 3), ", ",
+                 round(perc_rej_j[4], 3), ") & (",
+                 round(perc_rej_j[5], 3), ", ",
+                 round(perc_rej_j[6], 3), ") & (",
+                 round(perc_rej_j[7], 3), ", ",
+                 round(perc_rej_j[8], 3), ")"))
+}
 
