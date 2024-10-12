@@ -95,8 +95,8 @@ n_buff_width = 8
     # Theta ------------------------------------------------------------------------
     indiv_results_theta = matrix(NA, nrow = n_buff_width, ncol = 4)
     
-    g_mat = matrix(NA, nrow = n_buff_width, ncol = 3)
-    colnames(g_mat) = c("max", "mean", "median")
+    g_mat = matrix(NA, nrow = n_buff_width, ncol = 2)
+    colnames(g_mat) = c("max", "mean")
     
     global_results_theta = vector(mode = 'list', length  = 4)
     global_results_theta[[1]] = global_results_theta[[2]] = 
@@ -104,7 +104,7 @@ n_buff_width = 8
         
     
     for(k in 1:n_buff_width) {
-        m_theta = match_count_list[k,"theta"]
+        m_theta = match_count_list[["theta"]][k]
         
         load(paste0('../Output_noWater_rev/nullGridInfo/combinedMatchingSetup', k, ".dat"))
         load(paste0('../Output_noWater_rev/origGridInfo/sim_orig_', k, '.dat'))
@@ -130,6 +130,11 @@ n_buff_width = 8
         combinedMatchingSetupFix2$GRID_IND_1 = combinedMatchingSetupFix$GRID_IND_1[wRatioOk]
         combinedMatchingSetupFix2$GRID_IND_2 = combinedMatchingSetupFix$GRID_IND_2[wRatioOk]
         
+        # Null locations
+        null_sum = combinedMatchingSetupFix2$DATA$area1 + combinedMatchingSetupFix2$DATA$area2
+        rat_off = combinedMatchingSetupFix2$DATA$area1 / combinedMatchingSetupFix2$DATA$area2
+        rat_off[rat_off < 1] = 1 / rat_off[rat_off < 1]
+        
         for(s_name in 1:4) {
             print(paste0("k ", k, " s ", s_name))
             load(file_names[s_name])
@@ -147,16 +152,12 @@ n_buff_width = 8
                 print("Incorrect input to start")
             }
             
-            rat_off = combinedMatchingSetupFix2$DATA$area1 / combinedMatchingSetupFix2$DATA$area2
-            rat_off[rat_off < 1] = 1 / rat_off[rat_off < 1]
-            
-            n_null = nrow(combinedMatchingSetupFix2)
             n_matches = 2000
             
             # Theta --------------------------------------------------------------------
             store_theta = matrix(NA, nrow = length(indexList_MAIN), ncol = n_matches)
             indPvalue_theta = rep(NA, length(indexList_MAIN))
-            globalPvalue_theta = rep(NA, 3)
+            globalPvalue_theta = rep(NA, 2)
             Y_theta = rep(NA, length(indexList_MAIN))
             X_theta = matrix(NA, length(indexList_MAIN), 2)
             
@@ -190,12 +191,22 @@ n_buff_width = 8
                 
                 if (length(wAll) > 10) {
                     
-                    sample_wAll = sample(wAll, n_matches, replace = T)
+                    if(length(wAll) > n_matches) {
+                        # Use Mahalanobis distance to narrow it down
+                        null_sum_ii = null_sum[wAll]
+                        null_ratio_ii = rat_off[wAll]
+                        v1_ii = sd(null_sum_ii, na.rm = T)^2
+                        v2_ii = sd(null_ratio_ii, na.rm = T)^2
+                        dist_temp = sqrt(((off_temp - null_sum_ii)^2/v1_ii) + ((ratio_temp - null_ratio_ii)^2 / v2_ii))
+                        
+                        sample_wAll = sample(wAll[order(dist_temp)[1:n_matches]], n_matches, replace = T)
+                    } else {
+                        sample_wAll = sample(wAll, n_matches, replace = T)   
+                    }
+                    
                     tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, sample_wAll)
                     testStatsNULL = tStats_temp$t_stat
-                    
-                    # testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
-                    # store_theta[ii,] = sample(testStatsNULL, n_matches, replace=TRUE)
+                
                     store_theta[ii,] = testStatsNULL
                 }
                 
@@ -209,8 +220,6 @@ n_buff_width = 8
                                              max(Y_theta, na.rm=TRUE))
             globalPvalue_theta[2] = mean(apply(store_theta, 2, mean, na.rm=TRUE) > 
                                              mean(Y_theta, na.rm=TRUE))
-            globalPvalue_theta[3] = mean(apply(store_theta, 2, median, na.rm=TRUE) > 
-                                             median(Y_theta, na.rm=TRUE))
             
             indiv_results_theta[k, s_name] = mean(indPvalue_theta < .05, na.rm=TRUE)
             global_results_theta[[s_name]][k,] = globalPvalue_theta
@@ -227,51 +236,51 @@ n_buff_width = 8
 # }
     
 
-all_indiv = array(NA, dim=c(1000, n_buff_width, 4))
-
-all_global = vector(mode = 'list', length = 4)
-all_global[[1]] = all_global[[2]] =
-    all_global[[3]] = all_global[[4]] = vector(mode = 'list', length = 8)
-
-for(t in 1:1000) {
-
-    load(paste0('../Output_noWater_rev/test_results/indiv_test_', t, '.rda'))
-    all_indiv[t,,] = indiv_results_theta
-
-    load(paste0('../Output_noWater_rev/test_results/global_test_', t, '.rda'))
-
-    for(i in 1:4) {
-        for(j in 1:8) {
-            all_global[[i]][[j]] = rbind(all_global[[i]][[j]],
-                                         global_results_theta[[i]][j,,drop = F])
-        }
-    }
-
-}
-
-print("Individual Results")
-avg_perc_rej = apply(all_indiv, 2:3, mean)
-for(j in 1:8) {
-    print(paste0((j+2)*100, "ft & ", round(avg_perc_rej[j,2], 3),
-                 " & ", round(avg_perc_rej[j,3], 3),
-                 " & ", round(avg_perc_rej[j,4], 3),
-                 " & ", round(avg_perc_rej[j,1], 3)))
-}
-
-print("Global Results")
-for(j in 1:8) {
-    perc_rej_j = apply(all_global[[2]][[j]], 2, function(x){mean(x < 0.05)})
-    perc_rej_j = c(perc_rej_j, apply(all_global[[3]][[j]], 2, function(x){mean(x < 0.05)}))
-    perc_rej_j = c(perc_rej_j, apply(all_global[[4]][[j]], 2, function(x){mean(x < 0.05)}))
-    perc_rej_j = c(perc_rej_j, apply(all_global[[1]][[j]], 2, function(x){mean(x < 0.05)}))
-
-    print(paste0((j+2)*100, "ft & (", round(perc_rej_j[1], 3), ", ",
-                 round(perc_rej_j[2], 3), ") & (",
-                 round(perc_rej_j[4], 3), ", ",
-                 round(perc_rej_j[5], 3), ") & (",
-                 round(perc_rej_j[7], 3), ", ",
-                 round(perc_rej_j[8], 3), ") & (",
-                 round(perc_rej_j[10], 3), ", ",
-                 round(perc_rej_j[11], 3), ")"))
-}
+# all_indiv = array(NA, dim=c(1000, n_buff_width, 4))
+# 
+# all_global = vector(mode = 'list', length = 4)
+# all_global[[1]] = all_global[[2]] =
+#     all_global[[3]] = all_global[[4]] = vector(mode = 'list', length = 8)
+# 
+# for(t in 1:1000) {
+# 
+#     load(paste0('../Output_noWater_rev/test_results/indiv_test_', t, '.rda'))
+#     all_indiv[t,,] = indiv_results_theta
+# 
+#     load(paste0('../Output_noWater_rev/test_results/global_test_', t, '.rda'))
+# 
+#     for(i in 1:4) {
+#         for(j in 1:8) {
+#             all_global[[i]][[j]] = rbind(all_global[[i]][[j]],
+#                                          global_results_theta[[i]][j,,drop = F])
+#         }
+#     }
+# 
+# }
+# 
+# print("Individual Results")
+# avg_perc_rej = apply(all_indiv, 2:3, mean)
+# for(j in 1:8) {
+#     print(paste0((j+2)*100, "ft & ", round(avg_perc_rej[j,2], 3),
+#                  " & ", round(avg_perc_rej[j,3], 3),
+#                  " & ", round(avg_perc_rej[j,4], 3),
+#                  " & ", round(avg_perc_rej[j,1], 3)))
+# }
+# 
+# print("Global Results")
+# for(j in 1:8) {
+#     perc_rej_j = apply(all_global[[2]][[j]], 2, function(x){mean(x < 0.05)})
+#     perc_rej_j = c(perc_rej_j, apply(all_global[[3]][[j]], 2, function(x){mean(x < 0.05)}))
+#     perc_rej_j = c(perc_rej_j, apply(all_global[[4]][[j]], 2, function(x){mean(x < 0.05)}))
+#     perc_rej_j = c(perc_rej_j, apply(all_global[[1]][[j]], 2, function(x){mean(x < 0.05)}))
+# 
+#     print(paste0((j+2)*100, "ft & (", round(perc_rej_j[1], 3), ", ",
+#                  round(perc_rej_j[2], 3), ") & (",
+#                  round(perc_rej_j[3], 3), ", ",
+#                  round(perc_rej_j[4], 3), ") & (",
+#                  round(perc_rej_j[5], 3), ", ",
+#                  round(perc_rej_j[6], 3), ") & (",
+#                  round(perc_rej_j[7], 3), ", ",
+#                  round(perc_rej_j[8], 3), ")"))
+# }
 
