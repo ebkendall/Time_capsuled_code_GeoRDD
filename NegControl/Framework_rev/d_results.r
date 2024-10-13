@@ -103,13 +103,23 @@ for(k in 1:n_buff_width) {
             total_match[ii] = length(wAll)
             
             if (length(wAll) > 10) {
-                
                 testStatsNULL = t_stat[wAll]
-                
                 testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
-                
                 store_theta[ii,] = sample(testStatsNULL, n_matches, replace=TRUE)
-            }
+            } 
+            # else {
+            #     # Use Mahalanobis distance to find closest 10
+            #     null_sum_ii = combinedMatchingSetupFix2$streets1[w3] + combinedMatchingSetupFix2$streets2[w3]
+            #     rat_off_ii = rat_off[w3]
+            #     v1_ii = sd(null_sum_ii, na.rm = T)^2
+            #     v2_ii = sd(rat_off_ii, na.rm = T)^2
+            #     dist_temp = sqrt(((off_temp - null_sum_ii)^2/v1_ii) + ((ratio_temp - rat_off_ii)^2 / v2_ii))
+            #     new_wAll = sample(w3[order(dist_temp)[1:10]])
+            #     
+            #     testStatsNULL = t_stat[new_wAll]
+            #     testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
+            #     store_theta[ii,] = sample(testStatsNULL, n_matches, replace=TRUE)
+            # }
         }
         
         # Ensure that at least 75% of the observed boundaries have more than 10 matches
@@ -189,11 +199,22 @@ for(k in 1:n_buff_width) {
                     if (length(wAll) > 10) {
                         
                         testStatsNULL = t_stat_int_surface[wAll, kk]
-                        
                         testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
-                        
                         store[ii,] = sample(testStatsNULL, n_matches, replace=TRUE)
-                    }
+                    } 
+                    # else {
+                    #     # Use Mahalanobis distance to find closest 10
+                    #     null_sum_ii = combinedMatchingSetupFix2$streets1[w3] + combinedMatchingSetupFix2$streets2[w3]
+                    #     rat_off_ii = rat_off[w3]
+                    #     v1_ii = sd(null_sum_ii, na.rm = T)^2
+                    #     v2_ii = sd(rat_off_ii, na.rm = T)^2
+                    #     dist_temp = sqrt(((off_temp - null_sum_ii)^2/v1_ii) + ((ratio_temp - rat_off_ii)^2 / v2_ii))
+                    #     new_wAll = sample(w3[order(dist_temp)[1:10]])
+                    #     
+                    #     testStatsNULL = t_stat_int_surface[new_wAll, kk]
+                    #     testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
+                    #     store_theta[ii,] = sample(testStatsNULL, n_matches, replace=TRUE)
+                    # }
                 }
                 
                 # Ensure that at least 75% of the observed boundaries have more than 10 matches

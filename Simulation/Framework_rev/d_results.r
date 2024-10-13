@@ -176,6 +176,7 @@ n_buff_width = 8
             repeat {
                 total_match = rep(0, nrow(X_theta))
                 store_theta = matrix(NA, nrow = length(indexList_MAIN), ncol = n_matches)
+                ind_keep = NULL
                 
                 for(ii in 1:nrow(X_theta)) {
                     off_temp = X_theta[ii,2]
@@ -194,34 +195,50 @@ n_buff_width = 8
                     total_match[ii] = length(wAll)
                     
                     if (length(wAll) > 10) {
+                        # sample_wAll = sample(wAll, n_matches, replace = T) 
+                        # tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, sample_wAll)
+                        # testStatsNULL = tStats_temp$t_stat
+                        # store_theta[ii,] = testStatsNULL
                         
-                        sample_wAll = sample(wAll, n_matches, replace = T)   
-                        tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, sample_wAll)
+                        tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, wAll)
                         testStatsNULL = tStats_temp$t_stat
-                        
-                        store_theta[ii,] = testStatsNULL
-                    }
+                        testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
+                        store_theta[ii,] = sample(testStatsNULL, n_matches, replace=TRUE)
+                        ind_keep = c(ind_keep, ii)
+                    } 
+                    # else {
+                    #     # Use Mahalanobis distance to find closest 10
+                    #     v1_ii = sd(null_sum, na.rm = T)^2
+                    #     v2_ii = sd(rat_off, na.rm = T)^2
+                    #     dist_temp = sqrt(((off_temp - null_sum)^2/v1_ii) + ((ratio_temp - rat_off)^2 / v2_ii))
+                    #     new_wAll = sample(order(dist_temp)[1:10])
+                    #     
+                    #     tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, new_wAll)
+                    #     testStatsNULL = tStats_temp$t_stat
+                    #     testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
+                    #     store_theta[ii,] = sample(testStatsNULL, n_matches, replace=TRUE)
+                    # }
                 }
-                
-                # Ensure that at least 75% of the observed boundaries have more than 10 matches
-                if(summary(total_match)[2] > 10) {
-                    break
-                } else {
-                    print("Need more matches (theta)!")
-                    print(paste0("Current perc = ", m_theta))
-                    print(summary(total_match))
-                    m_theta = m_theta - 0.01
-                }
+                break
+                # # Ensure that at least 75% of the observed boundaries have more than 10 matches
+                # if(summary(total_match)[2] > 10) {
+                #     break
+                # } else {
+                #     print("Need more matches (theta)!")
+                #     # print(paste0("Current perc = ", m_theta))
+                #     # print(summary(total_match))
+                #     m_theta = m_theta - 0.01
+                # }
             }
             
             for (jj in 1:nrow(X_theta)) {
                 indPvalue_theta[jj] = mean(store_theta[jj,] > Y_theta[jj])
             }
             
-            globalPvalue_theta[1] = mean(apply(store_theta, 2, max, na.rm=TRUE) > 
-                                             max(Y_theta, na.rm=TRUE))
-            globalPvalue_theta[2] = mean(apply(store_theta, 2, mean, na.rm=TRUE) > 
-                                             mean(Y_theta, na.rm=TRUE))
+            globalPvalue_theta[1] = mean(apply(store_theta[ind_keep,], 2, max, na.rm=TRUE) > 
+                                             max(Y_theta[ind_keep], na.rm=TRUE))
+            globalPvalue_theta[2] = mean(apply(store_theta[ind_keep,], 2, mean, na.rm=TRUE) > 
+                                             mean(Y_theta[ind_keep], na.rm=TRUE))
             
             indiv_results_theta[k, s_name] = mean(indPvalue_theta < .05, na.rm=TRUE)
             global_results_theta[[s_name]][k,] = globalPvalue_theta
@@ -236,7 +253,6 @@ n_buff_width = 8
     save(indiv_results_theta, file = paste0('../Output_noWater_rev/test_results/indiv_test_', trialNum, '.rda'))
     save(global_results_theta, file = paste0('../Output_noWater_rev/test_results/global_test_', trialNum, '.rda'))
 # }
-    
 
 all_indiv = array(NA, dim=c(1000, n_buff_width, 4))
 
@@ -285,4 +301,52 @@ for(j in 1:8) {
                  round(perc_rej_j[7], 3), ", ",
                  round(perc_rej_j[8], 3), ")"))
 }
+
+
+
+# hist(Y_theta, breaks = 12, col = 'black', xlim = c(0, max(store_theta, na.rm = T)))
+# hist(store_theta[,1], breaks = 12, add = T)
+# hist(store_theta[,10], breaks = 12, col = 'blue', add = T)
+# hist(store_theta[,100], breaks = 12, col = 'green', add = T)
+# hist(store_theta[,1000], breaks = 12, col = 'red', add = T)
+# 
+# hist(apply(store_theta, 2, max, na.rm=TRUE), main = 'Histogram of sim w/ Max (grey) and Mean (red)',
+#      xlim = c(0, max(store_theta, na.rm = T)), xlab = 'Test stats')
+# hist(apply(store_theta, 2, mean, na.rm=TRUE), col = 'red', add = T)
+# abline(v = max(Y_theta, na.rm=TRUE), lwd = 2, lty = 2)
+# abline(v = mean(Y_theta, na.rm=TRUE), col = 'red', lwd = 2, lty = 2)
+# 
+# library(tidyverse)
+# library(gridExtra, quietly = T)
+# s_name = c( "Precinct", "Constant", "Random", "Spatial")
+# p_max = p_mean = vector(mode = 'list', length = n_buff_width)
+# for(i in 1:n_buff_width) {
+#     p_max[[i]] = p_mean[[i]] = vector(mode = 'list', length = 4)
+#     for(s in 1:4) {
+#         adjPVal500 = data.frame("p" = all_global[[s]][[i]][,1])
+#         p_max[[i]][[s]] = ggplot(adjPVal500, aes(x=p)) +
+#             geom_histogram(color="black", fill="white", bins = sqrt(144)) +
+#             xlab("P-Values") +
+#             ylab("Frequency") +
+#             labs(title = "Corrected p-values (max)",
+#                  subtitle = paste0("k = ", i+2, ", ", s_name[s])) +
+#             theme(text = element_text(size=8))
+# 
+#         adjPVal500 = data.frame("p" = all_global[[s]][[i]][,2])
+#         p_mean[[i]][[s]] = ggplot(adjPVal500, aes(x=p)) +
+#             geom_histogram(color="black", fill="white", bins = sqrt(144)) +
+#             xlab("P-Values") +
+#             ylab("Frequency") +
+#             labs(title = "Corrected p-values (mean)",
+#                  subtitle = paste0("k = ", i+2, ", ", s_name[s])) +
+#             theme(text = element_text(size=8))
+#     }
+# }
+# pdf("pHist.pdf", onefile = T)
+# for(i in 1:n_buff_width) {
+#     grid.arrange(p_max[[i]][[2]], p_mean[[i]][[2]], p_max[[i]][[3]], p_mean[[i]][[3]],
+#                  p_max[[i]][[4]], p_mean[[i]][[4]], p_max[[i]][[1]], p_mean[[i]][[1]],
+#                  nrow = 4, ncol = 2)
+# }
+# dev.off()
 
