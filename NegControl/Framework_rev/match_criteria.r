@@ -45,6 +45,7 @@ for(k in 1:n_buff_width) {
     t_stat_int_surface = int_surface_info[,3*(1:8)]
     t_stat_int_surface_orig = origData$str_surf$INT_SURFACE[,3*(1:8)]
     
+    null_sum = combinedMatchingSetupFix2$streets1 + combinedMatchingSetupFix2$streets2
     rat_off = combinedMatchingSetupFix2$streets1 / combinedMatchingSetupFix2$streets2
     rat_off[rat_off < 1] = 1 / rat_off[rat_off < 1]
     
@@ -101,7 +102,20 @@ for(k in 1:n_buff_width) {
             total_match[ii] = length(wAll)
             
             if (length(wAll) > 10) {
-                t_NULL_theta = t_stat[wAll]
+                if(length(wAll) > 500) {
+                    # Use Mahalanobis distance to find closest 500
+                    null_sum_ii = null_sum[wAll]
+                    null_ratio_ii = rat_off[wAll]
+                    v1_ii = sd(null_sum_ii, na.rm = T)^2
+                    v2_ii = sd(null_ratio_ii, na.rm = T)^2
+                    dist_temp = sqrt(((off_temp - null_sum_ii)^2/v1_ii) + ((ratio_temp - null_ratio_ii)^2 / v2_ii))
+                    new_wAll = wAll[order(dist_temp)[1:500]]
+                    
+                    t_NULL_theta = t_stat[new_wAll]
+                } else {
+                    t_NULL_theta = t_stat[wAll]    
+                }
+                
                 t_NULL_theta = t_NULL_theta[which(t_NULL_theta > 0)]
                 store_theta[ii,] = sample(t_NULL_theta, n_matches, replace=TRUE)
             }
@@ -169,7 +183,20 @@ for(k in 1:n_buff_width) {
                     total_match[ii] = length(wAll)
                     
                     if (length(wAll) > 10) {
-                        t_NULL_tau = t_stat_int_surface[wAll, kk]
+                        if(length(wAll) > 500) {
+                            # Use Mahalanobis distance to find closest 500
+                            null_sum_ii = null_sum[wAll]
+                            null_ratio_ii = rat_off[wAll]
+                            v1_ii = sd(null_sum_ii, na.rm = T)^2
+                            v2_ii = sd(null_ratio_ii, na.rm = T)^2
+                            dist_temp = sqrt(((off_temp - null_sum_ii)^2/v1_ii) + ((ratio_temp - null_ratio_ii)^2 / v2_ii))
+                            new_wAll = wAll[order(dist_temp)[1:500]]
+                            
+                            t_NULL_tau = t_stat_int_surface[new_wAll, kk]
+                        } else {
+                            t_NULL_tau = t_stat_int_surface[wAll, kk]
+                        }
+                        
                         t_NULL_tau = t_NULL_tau[which(t_NULL_tau > 0)]
                         store_tau[ii,] = sample(t_NULL_tau, n_matches, replace=TRUE)
                     }
@@ -203,9 +230,9 @@ for(i in 1:length(p_theta)) {
     p_theta[[i]] = ggplot(p_val_theta, aes( y=y, x=x)) +
         geom_point(color = "red", size = 2) +
         geom_smooth(method = "loess", formula = y ~ x, span=0.5) +
-        labs(title=TeX(r'($\theta$: Matching's effect on type I error)'), 
+        labs(title=TeX(r'($\theta$: Effect of $c$ on type I error)'), 
              subtitle=substitute(paste(delta," = ",m, "00"),list(m=i+2))) +
-        xlab(TeX(r'(Measure of match similarity ($c$) )')) +
+        xlab(TeX(r'($c$)')) +
         ylab("Type I error") +
         ylim(0,max(p_val_theta$y)) +
         scale_x_continuous(breaks = pretty(p_val_theta$x, n = 10)) +
@@ -220,9 +247,9 @@ for(i in 1:length(p_tau)) {
     p_tau[[i]] = ggplot(p_val_tau, aes( y=y, x=x)) +
         geom_point(color = "red", size = 2) +
         geom_smooth(method = "loess", formula = y ~ x, span=0.5) +
-        labs(title=TeX(r'($\tau$: Matching's effect on type I error)'), 
+        labs(title=TeX(r'($\tau$: Effect of $c$ on type I error)'), 
              subtitle=substitute(paste("Spatial smoothing multiplier (", sigma," x ",m, ")"),list(m=adjust_val[i]))) +
-        xlab(TeX(r'(Measure of match similarity ($c$) )')) +
+        xlab(TeX(r'($c$)')) +
         ylab("Type I error") +
         ylim(0,max(p_val_tau$y)) +
         scale_x_continuous(breaks = pretty(p_val_tau$x, n = 10)) +

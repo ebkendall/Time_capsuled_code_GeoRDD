@@ -176,7 +176,7 @@ n_buff_width = 8
             repeat {
                 total_match = rep(0, nrow(X_theta))
                 store_theta = matrix(NA, nrow = length(indexList_MAIN), ncol = n_matches)
-                ind_keep = NULL
+                ind_keep_theta = NULL
                 
                 for(ii in 1:nrow(X_theta)) {
                     off_temp = X_theta[ii,2]
@@ -195,50 +195,32 @@ n_buff_width = 8
                     total_match[ii] = length(wAll)
                     
                     if (length(wAll) > 10) {
-                        # sample_wAll = sample(wAll, n_matches, replace = T) 
-                        # tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, sample_wAll)
-                        # testStatsNULL = tStats_temp$t_stat
-                        # store_theta[ii,] = testStatsNULL
-                        
                         tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, wAll)
                         testStatsNULL = tStats_temp$t_stat
                         testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
                         store_theta[ii,] = sample(testStatsNULL, n_matches, replace=TRUE)
-                        ind_keep = c(ind_keep, ii)
+                        ind_keep_theta = c(ind_keep_theta, ii)
                     } 
-                    # else {
-                    #     # Use Mahalanobis distance to find closest 10
-                    #     v1_ii = sd(null_sum, na.rm = T)^2
-                    #     v2_ii = sd(rat_off, na.rm = T)^2
-                    #     dist_temp = sqrt(((off_temp - null_sum)^2/v1_ii) + ((ratio_temp - rat_off)^2 / v2_ii))
-                    #     new_wAll = sample(order(dist_temp)[1:10])
-                    #     
-                    #     tStats_temp = test_stats(gridPointValues, combinedMatchingSetupFix2, new_wAll)
-                    #     testStatsNULL = tStats_temp$t_stat
-                    #     testStatsNULL = testStatsNULL[which(testStatsNULL > 0)]
-                    #     store_theta[ii,] = sample(testStatsNULL, n_matches, replace=TRUE)
-                    # }
                 }
-                break
-                # # Ensure that at least 75% of the observed boundaries have more than 10 matches
-                # if(summary(total_match)[2] > 10) {
-                #     break
-                # } else {
-                #     print("Need more matches (theta)!")
-                #     # print(paste0("Current perc = ", m_theta))
-                #     # print(summary(total_match))
-                #     m_theta = m_theta - 0.01
-                # }
+                
+                if(summary(total_match)[2] > 10) {
+                    break
+                } else {
+                    print("Need more matches (theta)!")
+                    print(paste0("Current perc = ", m_theta))
+                    print(summary(total_match))
+                    m_theta = m_theta - 0.01
+                }
             }
             
             for (jj in 1:nrow(X_theta)) {
                 indPvalue_theta[jj] = mean(store_theta[jj,] > Y_theta[jj])
             }
             
-            globalPvalue_theta[1] = mean(apply(store_theta[ind_keep,], 2, max, na.rm=TRUE) > 
-                                             max(Y_theta[ind_keep], na.rm=TRUE))
-            globalPvalue_theta[2] = mean(apply(store_theta[ind_keep,], 2, mean, na.rm=TRUE) > 
-                                             mean(Y_theta[ind_keep], na.rm=TRUE))
+            globalPvalue_theta[1] = mean(apply(store_theta[ind_keep_theta,], 2, max, na.rm=TRUE) > 
+                                             max(Y_theta[ind_keep_theta], na.rm=TRUE))
+            globalPvalue_theta[2] = mean(apply(store_theta[ind_keep_theta,], 2, mean, na.rm=TRUE) > 
+                                             mean(Y_theta[ind_keep_theta], na.rm=TRUE))
             
             indiv_results_theta[k, s_name] = mean(indPvalue_theta < .05, na.rm=TRUE)
             global_results_theta[[s_name]][k,] = globalPvalue_theta
