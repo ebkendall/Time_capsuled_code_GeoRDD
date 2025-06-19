@@ -1,7 +1,7 @@
 test_stats <- function(gridPointValues, combinedMatchingSetupFix, w50) {
     
-    t_stat_df = data.frame("t_stat" = c(-1),
-                           "naive_pval" = c(-1))
+    t_stat_df = data.frame("t_stat" = rep(0, length(w50)),
+                           "naive_pval" = rep(0, length(w50)))
     
     rowInd = 1
     
